@@ -75,6 +75,20 @@ export interface ColorSettings {
 	linkColor: string;
 }
 
+export interface FontSettings {
+	baseSize: number;
+	nameSize: number;
+	headingSize: number;
+	contactSize: number;
+}
+
+export const defaultFontSettings: FontSettings = {
+	baseSize: 8.7,
+	nameSize: 20.7,
+	headingSize: 16.8,
+	contactSize: 11.2
+};
+
 export type SectionId = 'profile' | 'education' | 'projects' | 'experience' | 'leadership' | 'skills' | 'achievements';
 
 export const defaultSectionOrder: SectionId[] = [
@@ -107,6 +121,7 @@ export interface ResumeData {
 	skills: SkillCategory[];
 	achievements: Achievement[];
 	colors: ColorSettings;
+	fonts: FontSettings;
 	sectionOrder: SectionId[];
 }
 
@@ -135,5 +150,6 @@ export const defaultResumeData: ResumeData = {
 		accentColor: '#22328A',
 		linkColor: '#1d4ed8'
 	},
+	fonts: { ...defaultFontSettings },
 	sectionOrder: [...defaultSectionOrder]
 };

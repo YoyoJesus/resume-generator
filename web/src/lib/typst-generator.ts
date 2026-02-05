@@ -126,7 +126,7 @@ ${achievementItems}`;
 }
 
 export function generateTypstCode(data: ResumeData): string {
-	const { personalInfo, profile, education, projects, workExperience, leadership, skills, achievements, colors, sectionOrder } = data;
+	const { personalInfo, profile, education, projects, workExperience, leadership, skills, achievements, colors, fonts, sectionOrder } = data;
 
 	const sections: Record<SectionId, string> = {
 		profile: generateProfile(profile.summary),
@@ -156,10 +156,10 @@ export function generateTypstCode(data: ResumeData): string {
 #let text-color = rgb("${colors.textColor}")
 #let acct-color = rgb("${colors.accentColor}")
 #let link-color = rgb("${colors.linkColor}")
-#let font-size = 8.7pt
-#let personal-info-addition = 2.5pt
-#let heading-addition = 8.1pt
-#let title-addition = 12.0pt
+#let font-size = ${fonts.baseSize}pt
+#let personal-info-font-size = ${fonts.contactSize}pt
+#let heading-size = ${fonts.headingSize}pt
+#let title-size = ${fonts.nameSize}pt
 
 #let bold(body) = {
   text(weight: 700)[#body]
@@ -176,7 +176,7 @@ export function generateTypstCode(data: ResumeData): string {
   left-margin: 0.15in,
   right-margin: 0.15in,
   font-size: font-size,
-  personal-info-font-size: (font-size+personal-info-addition),
+  personal-info-font-size: personal-info-font-size,
   author-name: "",
   author-position: center,
   personal-info-position: center,
@@ -209,7 +209,7 @@ export function generateTypstCode(data: ResumeData): string {
   )
 
   show heading.where(level: 1): it => block(width: 100%)[
-    #set text(font-size + heading-addition, weight: "regular", fill: acct-color)
+    #set text(heading-size, weight: "regular", fill: acct-color)
     #smallcaps(it.body)
     #v(-1.0em)
     #line(length: 100%, stroke: stroke(thickness: 0.4pt, paint: acct-color))
@@ -239,7 +239,7 @@ export function generateTypstCode(data: ResumeData): string {
           column-gutter: 20pt,
           align: center,
 
-          upper(text(font-size + title-addition, weight: "bold", fill: head-color)[#author-name]),
+          upper(text(title-size, weight: "bold", fill: head-color)[#author-name]),
         )[
           #v(-0.2em)
         ]
