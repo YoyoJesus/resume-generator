@@ -75,6 +75,28 @@ export interface ColorSettings {
 	linkColor: string;
 }
 
+export type SectionId = 'profile' | 'education' | 'projects' | 'experience' | 'leadership' | 'skills' | 'achievements';
+
+export const defaultSectionOrder: SectionId[] = [
+	'profile',
+	'education', 
+	'projects',
+	'experience',
+	'leadership',
+	'skills',
+	'achievements'
+];
+
+export const sectionLabels: Record<SectionId, string> = {
+	profile: 'Profile',
+	education: 'Education',
+	projects: 'Projects',
+	experience: 'Experience',
+	leadership: 'Leadership',
+	skills: 'Skills',
+	achievements: 'Achievements'
+};
+
 export interface ResumeData {
 	personalInfo: PersonalInfo;
 	profile: Profile;
@@ -85,6 +107,7 @@ export interface ResumeData {
 	skills: SkillCategory[];
 	achievements: Achievement[];
 	colors: ColorSettings;
+	sectionOrder: SectionId[];
 }
 
 export const defaultResumeData: ResumeData = {
@@ -111,5 +134,6 @@ export const defaultResumeData: ResumeData = {
 		textColor: '#1b1b1b',
 		accentColor: '#22328A',
 		linkColor: '#1d4ed8'
-	}
+	},
+	sectionOrder: [...defaultSectionOrder]
 };

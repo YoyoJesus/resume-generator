@@ -3,8 +3,8 @@
 	import { resumeStore } from '$lib/store';
 	import { generateTypstCode } from '$lib/typst-generator';
 	import { initCompiler, compileToPdf, downloadPdf } from '$lib/pdf-compiler';
-	import type { ResumeData, WorkExperience, Project, Education, Leadership, Achievement, SkillCategory } from '$lib/types';
-	import { defaultResumeData } from '$lib/types';
+	import type { ResumeData, WorkExperience, Project, Education, Leadership, Achievement, SkillCategory, SectionId } from '$lib/types';
+	import { defaultResumeData, sectionLabels, defaultSectionOrder } from '$lib/types';
 
 	let data: ResumeData = $state(structuredClone(defaultResumeData));
 	let activeTab = $state('personal');
@@ -129,6 +129,19 @@
 
 	function copyToClipboard() { navigator.clipboard.writeText(typstCode); }
 
+	// Section reordering
+	function moveSection(index: number, direction: 'up' | 'down') {
+		const newOrder = [...data.sectionOrder];
+		const targetIndex = direction === 'up' ? index - 1 : index + 1;
+		if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+		[newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+		data.sectionOrder = newOrder;
+	}
+
+	function resetSectionOrder() {
+		data.sectionOrder = [...defaultSectionOrder];
+	}
+
 	const tabs = [
 		{ id: 'personal', label: 'Personal' },
 		{ id: 'profile', label: 'Profile' },
@@ -138,6 +151,7 @@
 		{ id: 'leadership', label: 'Leadership' },
 		{ id: 'skills', label: 'Skills' },
 		{ id: 'achievements', label: 'Achievements' },
+		{ id: 'layout', label: 'Layout' },
 		{ id: 'colors', label: 'Colors' }
 	];
 </script>
@@ -301,10 +315,10 @@
 									<div>
 										<label>End Date</label>
 										<input type="month" bind:value={work.endDate} disabled={work.isPresent} />
-										<div class="flex items-center gap-2 mt-2 cursor-pointer select-none" onclick={() => work.isPresent = !work.isPresent}>
+										<label class="flex items-center gap-2 mt-2 cursor-pointer select-none">
 											<input type="checkbox" bind:checked={work.isPresent} class="w-4 h-4 rounded" />
 											<span class="text-sm text-gray-600">Currently working here</span>
-										</div>
+										</label>
 									</div>
 								</div>
 								<div>
@@ -346,10 +360,10 @@
 									<div>
 										<label>End Date</label>
 										<input type="month" bind:value={lead.endDate} disabled={lead.isPresent} />
-										<div class="flex items-center gap-2 mt-2 cursor-pointer select-none" onclick={() => lead.isPresent = !lead.isPresent}>
+										<label class="flex items-center gap-2 mt-2 cursor-pointer select-none">
 											<input type="checkbox" bind:checked={lead.isPresent} class="w-4 h-4 rounded" />
 											<span class="text-sm text-gray-600">Currently active</span>
-										</div>
+										</label>
 									</div>
 								</div>
 								<div>
@@ -415,6 +429,43 @@
 							</div>
 						{/each}
 						{#if data.achievements.length === 0}<p class="text-gray-500 text-center py-8">No achievements added yet.</p>{/if}
+					</div>
+				{/if}
+
+				<!-- Layout -->
+				{#if activeTab === 'layout'}
+					<div class="space-y-4">
+						<div class="flex items-center justify-between">
+							<h2 class="text-lg font-semibold">Section Order</h2>
+							<button class="secondary text-sm" onclick={resetSectionOrder}>Reset to Default</button>
+						</div>
+						<p class="text-sm text-gray-600">Drag sections or use the arrows to reorder how they appear in your resume.</p>
+						<div class="space-y-2">
+							{#each data.sectionOrder as sectionId, i}
+								<div class="flex items-center gap-3 bg-gray-50 border rounded-lg p-3">
+									<div class="flex flex-col gap-1">
+										<button 
+											class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+											onclick={() => moveSection(i, 'up')}
+											disabled={i === 0}
+											aria-label="Move section up"
+										>
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+										</button>
+										<button 
+											class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+											onclick={() => moveSection(i, 'down')}
+											disabled={i === data.sectionOrder.length - 1}
+											aria-label="Move section down"
+										>
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+										</button>
+									</div>
+									<span class="font-medium flex-1">{sectionLabels[sectionId]}</span>
+									<span class="text-sm text-gray-400">#{i + 1}</span>
+								</div>
+							{/each}
+						</div>
 					</div>
 				{/if}
 

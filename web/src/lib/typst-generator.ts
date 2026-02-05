@@ -1,4 +1,4 @@
-import type { ResumeData, WorkExperience, Project, Education, Leadership, Achievement, SkillCategory } from './types';
+import type { ResumeData, WorkExperience, Project, Education, Leadership, Achievement, SkillCategory, SectionId } from './types';
 
 function formatDate(dateStr: string): string {
 	if (!dateStr) return 'datetime.today()';
@@ -126,29 +126,31 @@ ${achievementItems}`;
 }
 
 export function generateTypstCode(data: ResumeData): string {
-	const { personalInfo, profile, education, projects, workExperience, leadership, skills, achievements, colors } = data;
+	const { personalInfo, profile, education, projects, workExperience, leadership, skills, achievements, colors, sectionOrder } = data;
 
-	const profileSection = generateProfile(profile.summary);
+	const sections: Record<SectionId, string> = {
+		profile: generateProfile(profile.summary),
+		education: education.length > 0
+			? `= Education\n${education.map(generateEducation).join('\n\n')}`
+			: '',
+		projects: projects.length > 0
+			? `= Projects\n${projects.map(generateProject).join('\n\n')}`
+			: '',
+		experience: workExperience.length > 0
+			? `= Experience\n${workExperience.map(generateWorkExperience).join('\n\n')}`
+			: '',
+		leadership: leadership.length > 0
+			? `= Leadership\n${leadership.map(generateLeadership).join('\n\n')}`
+			: '',
+		skills: generateSkills(skills),
+		achievements: generateAchievements(achievements)
+	};
 
-	const educationSection = education.length > 0
-		? `= Education\n${education.map(generateEducation).join('\n\n')}`
-		: '';
-
-	const projectSection = projects.length > 0
-		? `= Projects\n${projects.map(generateProject).join('\n\n')}`
-		: '';
-
-	const workSection = workExperience.length > 0
-		? `= Experience\n${workExperience.map(generateWorkExperience).join('\n\n')}`
-		: '';
-
-	const leadershipSection = leadership.length > 0
-		? `= Leadership\n${leadership.map(generateLeadership).join('\n\n')}`
-		: '';
-
-	const skillsSection = generateSkills(skills);
-
-	const achievementsSection = generateAchievements(achievements);
+	// Generate sections in the specified order
+	const orderedSections = sectionOrder
+		.map(id => sections[id])
+		.filter(section => section.trim() !== '')
+		.join('\n\n');
 
 	return `#let head-color = rgb("${colors.headColor}")
 #let text-color = rgb("${colors.textColor}")
@@ -395,18 +397,6 @@ export function generateTypstCode(data: ResumeData): string {
   github-username: "${escapeTypst(personalInfo.github)}",
 )
 
-${profileSection}
-
-${educationSection}
-
-${projectSection}
-
-${workSection}
-
-${leadershipSection}
-
-${skillsSection}
-
-${achievementsSection}
+${orderedSections}
 `;
 }
