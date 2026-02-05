@@ -2,14 +2,29 @@ import { createTypstCompiler, type TypstCompiler } from '@myriaddreamin/typst.ts
 
 let compiler: TypstCompiler | null = null;
 let initPromise: Promise<void> | null = null;
+let initError: Error | null = null;
 
 export async function initCompiler(): Promise<void> {
 	if (compiler) return;
+	if (initError) throw initError;
 	if (initPromise) return initPromise;
 
 	initPromise = (async () => {
-		compiler = createTypstCompiler();
-		await compiler.init();
+		try {
+			const c = createTypstCompiler();
+			if (!c) {
+				throw new Error('Failed to create Typst compiler - WebAssembly may not be supported');
+			}
+			// Load WASM from static folder
+			await c.init({
+				getModule: () => fetch('/typst_ts_web_compiler_bg.wasm').then(r => r.arrayBuffer())
+			});
+			compiler = c;
+		} catch (err) {
+			initError = err instanceof Error ? err : new Error(String(err));
+			initPromise = null;
+			throw initError;
+		}
 	})();
 
 	return initPromise;
@@ -17,7 +32,7 @@ export async function initCompiler(): Promise<void> {
 
 export async function compileToPdf(typstCode: string): Promise<Uint8Array> {
 	await initCompiler();
-	if (!compiler) throw new Error('Compiler not initialized');
+	if (!compiler) throw new Error('Typst compiler failed to initialize. Try refreshing the page.');
 
 	// Reset and add the main file
 	await compiler.reset();
