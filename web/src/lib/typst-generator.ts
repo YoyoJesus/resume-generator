@@ -282,6 +282,7 @@ export function generateTypstCode(data: ResumeData): string {
 #let generic_2x2(cols, r1c1, r1c2, r2c1, r2c2) = {
   grid(
     columns: cols,
+    gutter: 0.5em,
     align(left)[#r1c1 \\ #r2c1],
     align(right)[#r1c2 \\ #r2c2]
   )
@@ -320,7 +321,7 @@ export function generateTypstCode(data: ResumeData): string {
 
 #let work-heading(title, company, location, start-date, end-date, body) = {
   generic_2x2(
-    (1fr, 1fr),
+    (65%, 35%),
     [#bold(title)], [#bold(period_worked(start-date, end-date))],
     [#company], location
   )

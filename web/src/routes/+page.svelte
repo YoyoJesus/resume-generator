@@ -296,14 +296,15 @@
 								<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<div><label>Job Title</label><input type="text" bind:value={work.title} placeholder="Software Engineer" /></div>
 									<div><label>Company</label><input type="text" bind:value={work.company} placeholder="Company Name" /></div>
-									<div><label>Location</label><input type="text" bind:value={work.location} placeholder="City, State" /></div>
-									<div class="flex gap-2">
-										<div class="flex-1"><label>Start</label><input type="month" bind:value={work.startDate} /></div>
-										<div class="flex-1"><label>End</label><input type="month" bind:value={work.endDate} disabled={work.isPresent} /></div>
-									</div>
-									<div class="flex items-center gap-2 md:col-span-2">
-										<input type="checkbox" id="work-present-{work.id}" bind:checked={work.isPresent} class="w-4 h-4" />
-										<label for="work-present-{work.id}" class="mb-0">Currently working here</label>
+									<div class="md:col-span-2"><label>Location</label><input type="text" bind:value={work.location} placeholder="City, State" /></div>
+									<div><label>Start Date</label><input type="month" bind:value={work.startDate} /></div>
+									<div>
+										<label>End Date</label>
+										<input type="month" bind:value={work.endDate} disabled={work.isPresent} />
+										<div class="flex items-center gap-2 mt-2 cursor-pointer select-none" onclick={() => work.isPresent = !work.isPresent}>
+											<input type="checkbox" bind:checked={work.isPresent} class="w-4 h-4 rounded" />
+											<span class="text-sm text-gray-600">Currently working here</span>
+										</div>
 									</div>
 								</div>
 								<div>
@@ -340,14 +341,15 @@
 								<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 									<div><label>Title</label><input type="text" bind:value={lead.title} placeholder="Team Lead" /></div>
 									<div><label>Organization</label><input type="text" bind:value={lead.organization} placeholder="Organization Name" /></div>
-									<div><label>Location</label><input type="text" bind:value={lead.location} placeholder="City, State" /></div>
-									<div class="flex gap-2">
-										<div class="flex-1"><label>Start</label><input type="month" bind:value={lead.startDate} /></div>
-										<div class="flex-1"><label>End</label><input type="month" bind:value={lead.endDate} disabled={lead.isPresent} /></div>
-									</div>
-									<div class="flex items-center gap-2 md:col-span-2">
-										<input type="checkbox" id="lead-present-{lead.id}" bind:checked={lead.isPresent} class="w-4 h-4" />
-										<label for="lead-present-{lead.id}" class="mb-0">Currently active</label>
+									<div class="md:col-span-2"><label>Location</label><input type="text" bind:value={lead.location} placeholder="City, State" /></div>
+									<div><label>Start Date</label><input type="month" bind:value={lead.startDate} /></div>
+									<div>
+										<label>End Date</label>
+										<input type="month" bind:value={lead.endDate} disabled={lead.isPresent} />
+										<div class="flex items-center gap-2 mt-2 cursor-pointer select-none" onclick={() => lead.isPresent = !lead.isPresent}>
+											<input type="checkbox" bind:checked={lead.isPresent} class="w-4 h-4 rounded" />
+											<span class="text-sm text-gray-600">Currently active</span>
+										</div>
 									</div>
 								</div>
 								<div>
