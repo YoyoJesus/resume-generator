@@ -2,12 +2,15 @@
 	import { onMount } from 'svelte';
 	import { resumeStore } from '$lib/store';
 	import { generateTypstCode } from '$lib/typst-generator';
+	import { initCompiler, compileToPdf, downloadPdf } from '$lib/pdf-compiler';
 	import type { ResumeData, WorkExperience, Project, Education, SkillCategory } from '$lib/types';
 	import { defaultResumeData } from '$lib/types';
 
 	let data: ResumeData = $state(structuredClone(defaultResumeData));
 	let activeTab = $state('personal');
 	let showCode = $state(false);
+	let isCompiling = $state(false);
+	let compileError = $state<string | null>(null);
 	let typstCode = $derived(generateTypstCode(data));
 
 	onMount(() => {
@@ -15,6 +18,8 @@
 		const unsub = resumeStore.subscribe(val => {
 			data = val;
 		});
+		// Pre-initialize compiler in background
+		initCompiler().catch(console.error);
 		return unsub;
 	});
 
@@ -126,6 +131,20 @@
 		URL.revokeObjectURL(url);
 	}
 
+	async function downloadPdfFile() {
+		isCompiling = true;
+		compileError = null;
+		try {
+			const pdfData = await compileToPdf(typstCode);
+			downloadPdf(pdfData, `${data.personalInfo.name || 'resume'}.pdf`);
+		} catch (err) {
+			console.error('PDF compilation failed:', err);
+			compileError = err instanceof Error ? err.message : 'Compilation failed';
+		} finally {
+			isCompiling = false;
+		}
+	}
+
 	function copyToClipboard() {
 		navigator.clipboard.writeText(typstCode);
 	}
@@ -148,10 +167,12 @@
 				<h1 class="text-2xl font-bold text-gray-900">Resume Builder</h1>
 				<div class="flex gap-2">
 					<button class="secondary" onclick={saveData}>Save</button>
-					<button class="primary" onclick={() => showCode = !showCode}>
+					<button class="secondary" onclick={() => showCode = !showCode}>
 						{showCode ? 'Hide Code' : 'View Typst'}
 					</button>
-					<button class="primary" onclick={downloadTypst}>Download .typ</button>
+					<button class="primary" onclick={downloadPdfFile} disabled={isCompiling}>
+						{isCompiling ? 'Generating...' : 'Download PDF'}
+					</button>
 				</div>
 			</div>
 		</div>
