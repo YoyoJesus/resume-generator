@@ -577,7 +577,7 @@
 									{#each data.education as edu}
 										<div class="mb-1">
 											<div class="flex justify-between"><span class="font-bold">{edu.institution}</span><span class="font-bold">{edu.location}</span></div>
-											<div class="flex justify-between"><span>{edu.degree}, {edu.major}</span><span>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</span></div>
+											<div class="flex justify-between"><span>{[edu.degree, edu.major].filter(Boolean).join(', ')}</span><span>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</span></div>
 											<ul class="list-disc list-inside">{#each edu.bullets.filter(b=>b) as b}<li>{b}</li>{/each}</ul>
 										</div>
 									{/each}
