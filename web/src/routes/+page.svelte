@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { resumeStore } from '$lib/store';
 	import { generateTypstCode } from '$lib/typst-generator';
-	import { initCompiler, compileToPdf, downloadPdf } from '$lib/pdf-compiler';
+	import { initCompiler, compileToPdf, compileToSvg, downloadPdf } from '$lib/pdf-compiler';
 	import type { ResumeData, WorkExperience, Project, Education, Leadership, Achievement, SkillCategory, SectionId } from '$lib/types';
 	import { defaultResumeData, sectionLabels, defaultSectionOrder, defaultFontSettings } from '$lib/types';
 
@@ -13,6 +13,9 @@
 	let compileError = $state<string | null>(null);
 	let typstCode = $derived(generateTypstCode(data));
 	let previewRef = $state<HTMLDivElement | null>(null);
+	let svgPreview = $state<string>('');
+	let isPreviewLoading = $state(false);
+	let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -40,12 +43,30 @@
 		return lines > 45; // Rough estimate for one page
 	});
 
+	async function updatePreview(code: string) {
+		isPreviewLoading = true;
+		try {
+			svgPreview = await compileToSvg(code);
+		} catch (err) {
+			console.error('SVG preview failed:', err);
+		} finally {
+			isPreviewLoading = false;
+		}
+	}
+
+	$effect(() => {
+		const code = typstCode;
+		clearTimeout(previewDebounceTimer);
+		previewDebounceTimer = setTimeout(() => updatePreview(code), 300);
+		return () => clearTimeout(previewDebounceTimer);
+	});
+
 	onMount(() => {
 		resumeStore.loadFromStorage();
 		const unsub = resumeStore.subscribe(val => {
 			data = val;
 		});
-		initCompiler().catch(console.error);
+		initCompiler().then(() => updatePreview(typstCode)).catch(console.error);
 		return unsub;
 	});
 
@@ -449,7 +470,7 @@
 							{#each data.sectionOrder as sectionId, i}
 								<div class="flex items-center gap-3 bg-gray-50 border rounded-lg p-3">
 									<div class="flex flex-col gap-1">
-										<button 
+										<button
 											class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
 											onclick={() => moveSection(i, 'up')}
 											disabled={i === 0}
@@ -457,7 +478,7 @@
 										>
 											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
 										</button>
-										<button 
+										<button
 											class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
 											onclick={() => moveSection(i, 'down')}
 											disabled={i === data.sectionOrder.length - 1}
@@ -543,102 +564,32 @@
 						<pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto max-h-[calc(100vh-16rem)] text-xs w-full"><code>{typstCode}</code></pre>
 					</div>
 				{:else}
-					<!-- Outer wrapper constrains visual size -->
 					<div
 						bind:this={previewRef}
-						class="bg-white shadow-lg overflow-hidden"
+						class="bg-white shadow-lg overflow-hidden resume-preview"
 						style="width: 100%; max-width: 510px; aspect-ratio: 8.5 / 11;"
 					>
-					<!-- Inner page at real dimensions, scaled to fit -->
-					<div
-						style="width: 8.5in; height: 11in; transform-origin: top left; transform: scale(0.625); font-family: Georgia, serif; font-size: {data.fonts.baseSize}pt; color: {data.colors.textColor}; padding: 0.15in;"
-					>
-						<!-- Header -->
-						<div class="text-center mb-2">
-							<h1 class="font-bold uppercase" style="color: {data.colors.headColor}; font-size: {data.fonts.nameSize}pt;">{data.personalInfo.name || 'Your Name'}</h1>
-							<div class="flex flex-wrap justify-center gap-x-1" style="color: {data.colors.textColor}; font-size: {data.fonts.contactSize}pt;">
-								{#if data.personalInfo.email}<span style="color: {data.colors.linkColor}">{data.personalInfo.email}</span> |{/if}
-								{#if data.personalInfo.website}<span style="color: {data.colors.linkColor}">{data.personalInfo.website}</span> |{/if}
-								{#if data.personalInfo.linkedin}<span style="color: {data.colors.linkColor}">linkedin.com/in/{data.personalInfo.linkedin}</span> |{/if}
-								{#if data.personalInfo.github}<span style="color: {data.colors.linkColor}">github.com/{data.personalInfo.github}</span> |{/if}
-								{#if data.personalInfo.phone}<span>{data.personalInfo.phone}</span>{/if}
+						{#if isPreviewLoading && !svgPreview}
+							<div class="flex items-center justify-center h-full text-gray-400">
+								<span>Compiling preview...</span>
 							</div>
-						</div>
-
-						{#each data.sectionOrder as sectionId}
-							{#if sectionId === 'profile' && data.profile.summary}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Profile</h2>
-									<p style="color: {data.colors.textColor}; line-height: 1.3;">{data.profile.summary}</p>
-								</div>
-							{:else if sectionId === 'education' && data.education.length > 0}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Education</h2>
-									{#each data.education as edu}
-										<div class="mb-1">
-											<div class="flex justify-between"><span class="font-bold">{edu.institution}</span><span class="font-bold">{edu.location}</span></div>
-											<div class="flex justify-between"><span>{[edu.degree, edu.major].filter(Boolean).join(', ')}</span><span>{formatDate(edu.startDate)} - {formatDate(edu.endDate)}</span></div>
-											<ul class="list-disc list-inside">{#each edu.bullets.filter(b=>b) as b}<li>{b}</li>{/each}</ul>
-										</div>
-									{/each}
-								</div>
-							{:else if sectionId === 'projects' && data.projects.length > 0}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Projects</h2>
-									{#each data.projects as project}
-										<div class="mb-1">
-											<span class="font-bold" style="color: {project.url ? data.colors.linkColor : data.colors.textColor}">{project.name}</span>
-											{#if project.stack} | <span class="font-bold">{project.stack}</span>{/if}
-											{#if project.award} · {project.award}{/if}
-											<ul class="list-disc list-inside">{#each project.bullets.filter(b=>b) as b}<li>{b}</li>{/each}</ul>
-										</div>
-									{/each}
-								</div>
-							{:else if sectionId === 'experience' && data.workExperience.length > 0}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Experience</h2>
-									{#each data.workExperience as work}
-										<div class="mb-1">
-											<div class="flex justify-between"><span class="font-bold">{work.title}</span><span class="font-bold">{formatDate(work.startDate)} - {work.isPresent ? 'Present' : formatDate(work.endDate)}</span></div>
-											<div class="flex justify-between"><span>{work.company}</span><span>{work.location}</span></div>
-											<ul class="list-disc list-inside">{#each work.bullets.filter(b=>b) as b}<li>{b}</li>{/each}</ul>
-										</div>
-									{/each}
-								</div>
-							{:else if sectionId === 'leadership' && data.leadership.length > 0}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Leadership</h2>
-									{#each data.leadership as lead}
-										<div class="mb-1">
-											<div class="flex justify-between"><span class="font-bold">{lead.title}</span><span class="font-bold">{formatDate(lead.startDate)} - {lead.isPresent ? 'Present' : formatDate(lead.endDate)}</span></div>
-											<div class="flex justify-between"><span>{lead.organization}</span><span>{lead.location}</span></div>
-											<ul class="list-disc list-inside">{#each lead.bullets.filter(b=>b) as b}<li>{b}</li>{/each}</ul>
-										</div>
-									{/each}
-								</div>
-							{:else if sectionId === 'skills' && data.skills.length > 0}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Skills</h2>
-									{#each data.skills.filter(s => s.category && s.skills) as skill}
-										<p><span class="font-bold">{skill.category}:</span> {skill.skills}</p>
-									{/each}
-								</div>
-							{:else if sectionId === 'achievements' && data.achievements.length > 0}
-								<div class="mb-2">
-									<h2 class="uppercase tracking-wider pb-0.5 mb-0.5 font-normal" style="color: {data.colors.accentColor}; border-bottom: 1px solid {data.colors.accentColor}; font-size: {data.fonts.headingSize}pt;">Achievements / Certifications</h2>
-									{#each data.achievements.filter(a => a.title) as achievement}
-										<div class="mb-1">
-											<span class="font-bold">{achievement.title}</span>{#if achievement.date} | {achievement.date}{/if}
-											{#if achievement.description}<p>{achievement.description}</p>{/if}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						{/each}
-					</div>
+						{:else if svgPreview}
+							{@html svgPreview}
+						{:else}
+							<div class="flex items-center justify-center h-full text-gray-400">
+								<span>Preview will appear here</span>
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</div>
 		</div>
 	</main>
 </div>
+
+<style>
+	.resume-preview :global(svg) {
+		width: 100%;
+		height: 100%;
+	}
+</style>

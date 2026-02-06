@@ -15,6 +15,9 @@ export async function initCompiler(): Promise<void> {
 			$typst.setCompilerInitOptions({
 				getModule: () => fetch('/typst_ts_web_compiler_bg.wasm').then(r => r.arrayBuffer())
 			});
+			$typst.setRendererInitOptions({
+				getModule: () => fetch('/typst_ts_renderer_bg.wasm').then(r => r.arrayBuffer())
+			});
 			// Initialize by doing a simple compile - this will load fonts from CDN
 			await $typst.pdf({ mainContent: '' });
 			initialized = true;
@@ -34,6 +37,18 @@ export async function compileToPdf(typstCode: string): Promise<Uint8Array> {
 	try {
 		const pdfData = await $typst.pdf({ mainContent: typstCode });
 		return pdfData;
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		throw new Error(message);
+	}
+}
+
+export async function compileToSvg(typstCode: string): Promise<string> {
+	await initCompiler();
+
+	try {
+		const svgData = await $typst.svg({ mainContent: typstCode });
+		return svgData;
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		throw new Error(message);
