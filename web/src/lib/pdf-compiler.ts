@@ -36,6 +36,7 @@ export async function compileToPdf(typstCode: string): Promise<Uint8Array> {
 
 	try {
 		const pdfData = await $typst.pdf({ mainContent: typstCode });
+		if (!pdfData) throw new Error('PDF compilation returned no data');
 		return pdfData;
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
@@ -56,7 +57,7 @@ export async function compileToSvg(typstCode: string): Promise<string> {
 }
 
 export function downloadPdf(pdfData: Uint8Array, filename: string = 'resume.pdf'): void {
-	const blob = new Blob([pdfData], { type: 'application/pdf' });
+	const blob = new Blob([new Uint8Array(pdfData)], { type: 'application/pdf' });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;

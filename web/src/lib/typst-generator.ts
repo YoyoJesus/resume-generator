@@ -7,6 +7,15 @@ function formatDate(dateStr: string): string {
 	return `datetime(year: ${year}, month: ${parseInt(month)}, day: 1)`;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function formatDisplayDate(dateStr: string): string {
+	if (!dateStr) return '';
+	const [year, month] = dateStr.split('-');
+	if (!year || !month || isNaN(parseInt(month))) return dateStr;
+	return `${MONTHS[parseInt(month) - 1]} ${year}`;
+}
+
 function escapeTypst(str: string): string {
 	return str
 		.replace(/\\/g, '\\\\')
@@ -114,9 +123,9 @@ function generateAchievements(achievements: Achievement[]): string {
 	const achievementItems = achievements
 		.filter(a => a.title.trim())
 		.map(a => {
-			const datePart = a.date ? ` | ${escapeTypst(a.date)}` : '';
+			const dateDisplay = formatDisplayDate(a.date);
 			const descPart = a.description.trim() ? `\n${escapeTypst(a.description)}` : '';
-			return `#achievement-heading("${escapeTypst(a.title)}", "${datePart.replace(' | ', '')}")[${descPart}]`;
+			return `#achievement-heading("${escapeTypst(a.title)}", "${escapeTypst(dateDisplay)}")[${descPart}]`;
 		})
 		.join('\n\n');
 

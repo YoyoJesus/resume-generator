@@ -29,18 +29,18 @@
 	// Estimate if resume exceeds one page (rough heuristic based on content)
 	let isOverOnePage = $derived(() => {
 		let lines = 0;
-		lines += data.profile.summary ? 3 : 0;
-		lines += data.education.length * 4;
+		lines += data.profile.summary ? 2 : 0;
+		lines += data.education.length * 3;
 		data.education.forEach(e => lines += e.bullets.filter(b => b).length);
-		lines += data.projects.length * 3;
+		lines += data.projects.length * 2;
 		data.projects.forEach(p => lines += p.bullets.filter(b => b).length);
-		lines += data.workExperience.length * 4;
+		lines += data.workExperience.length * 3;
 		data.workExperience.forEach(w => lines += w.bullets.filter(b => b).length);
-		lines += data.leadership.length * 4;
+		lines += data.leadership.length * 3;
 		data.leadership.forEach(l => lines += l.bullets.filter(b => b).length);
 		lines += data.skills.length * 1;
-		lines += data.achievements.length * 3;
-		return lines > 45; // Rough estimate for one page
+		lines += data.achievements.length * 2;
+		return lines > 55; // Rough estimate for one page
 	});
 
 	async function updatePreview(code: string) {
@@ -70,10 +70,10 @@
 		return unsub;
 	});
 
-	function saveData() {
+	$effect(() => {
 		resumeStore.set(data);
 		resumeStore.saveToStorage(data);
-	}
+	});
 
 	function generateId(): string {
 		return Math.random().toString(36).substring(2, 9);
@@ -188,7 +188,6 @@
 			<div class="flex items-center justify-between flex-wrap gap-2">
 				<h1 class="text-2xl font-bold text-gray-900">Resume Builder</h1>
 				<div class="flex gap-2">
-					<button class="secondary" onclick={saveData}>Save</button>
 					<button class="secondary" onclick={() => showCode = !showCode}>
 						{showCode ? 'Preview' : 'Typst'}
 					</button>
@@ -451,7 +450,7 @@
 								<div class="flex justify-between items-start">
 									<div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
 										<div><label>Title</label><input type="text" bind:value={achievement.title} placeholder="AWS Certified Developer" /></div>
-										<div><label>Date</label><input type="text" bind:value={achievement.date} placeholder="Jan 2024" /></div>
+										<div><label>Date</label><input type="month" bind:value={achievement.date} /></div>
 									</div>
 									<button class="danger text-sm px-2 py-1 ml-2" onclick={() => removeAchievement(achievement.id)}>X</button>
 								</div>
@@ -574,7 +573,7 @@
 					<div
 						bind:this={previewRef}
 						class="bg-white shadow-lg overflow-hidden resume-preview"
-						style="width: 100%; max-width: 510px; aspect-ratio: 8.5 / 11;"
+						style="width: 100%; max-width: 510px;"
 					>
 						{#if isPreviewLoading && !svgPreview}
 							<div class="flex items-center justify-center h-full text-gray-400">
@@ -609,6 +608,6 @@
 <style>
 	.resume-preview :global(svg) {
 		width: 100%;
-		height: 100%;
+		height: auto;
 	}
 </style>
