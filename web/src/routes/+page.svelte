@@ -263,7 +263,14 @@
 									<div><label>Degree</label><input type="text" bind:value={edu.degree} placeholder="Bachelor of Sciences" /></div>
 									<div><label>Major</label><input type="text" bind:value={edu.major} placeholder="Computer Science" /></div>
 									<div><label>Start Date</label><input type="month" bind:value={edu.startDate} /></div>
-									<div><label>End Date (Expected)</label><input type="month" bind:value={edu.endDate} /></div>
+									<div>
+										<label>End Date (Expected)</label>
+										<input type="month" bind:value={edu.endDate} disabled={edu.isPresent} />
+										<label class="flex items-center gap-2 mt-2 cursor-pointer select-none">
+											<input type="checkbox" bind:checked={edu.isPresent} class="w-4 h-4 rounded" />
+											<span class="text-sm text-gray-600">Currently studying</span>
+										</label>
+									</div>
 								</div>
 								<div>
 									<div class="flex items-center justify-between mb-2">

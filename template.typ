@@ -230,10 +230,19 @@
   assert.eq(type(start-date), datetime)
   assert(type(end-date) == datetime or type(end-date) == str)
 
+  let degree-line = if degree != "" and major != "" {
+    [#degree, #major]
+  } else if degree != "" {
+    [#degree]
+  } else if major != "" {
+    [#major]
+  } else {
+    []
+  }
   generic_2x2(
     (70%, 30%),
-    [#bold(institution)], [#bold(location)], 
-    [#degree, #major], period_worked(start-date, end-date)
+    [#bold(institution)], [#bold(location)],
+    degree-line, period_worked(start-date, end-date)
   )
   v(-0.2em)
   if body != [] {

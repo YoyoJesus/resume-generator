@@ -3,6 +3,7 @@ import type { ResumeData, WorkExperience, Project, Education, Leadership, Achiev
 function formatDate(dateStr: string): string {
 	if (!dateStr) return 'datetime.today()';
 	const [year, month] = dateStr.split('-');
+	if (!year || !month || isNaN(parseInt(month))) return 'datetime.today()';
 	return `datetime(year: ${year}, month: ${parseInt(month)}, day: 1)`;
 }
 
@@ -128,19 +129,24 @@ ${achievementItems}`;
 export function generateTypstCode(data: ResumeData): string {
 	const { personalInfo, profile, education, projects, workExperience, leadership, skills, achievements, colors, fonts, sectionOrder } = data;
 
+	const filledEducation = education.filter(e => e.institution.trim() || e.degree.trim() || e.major.trim());
+	const filledProjects = projects.filter(p => p.name.trim());
+	const filledExperience = workExperience.filter(w => w.title.trim() || w.company.trim());
+	const filledLeadership = leadership.filter(l => l.title.trim() || l.organization.trim());
+
 	const sections: Record<SectionId, string> = {
 		profile: generateProfile(profile.summary),
-		education: education.length > 0
-			? `= Education\n${education.map(generateEducation).join('\n\n')}`
+		education: filledEducation.length > 0
+			? `= Education\n${filledEducation.map(generateEducation).join('\n\n')}`
 			: '',
-		projects: projects.length > 0
-			? `= Projects\n${projects.map(generateProject).join('\n\n')}`
+		projects: filledProjects.length > 0
+			? `= Projects\n${filledProjects.map(generateProject).join('\n\n')}`
 			: '',
-		experience: workExperience.length > 0
-			? `= Experience\n${workExperience.map(generateWorkExperience).join('\n\n')}`
+		experience: filledExperience.length > 0
+			? `= Experience\n${filledExperience.map(generateWorkExperience).join('\n\n')}`
 			: '',
-		leadership: leadership.length > 0
-			? `= Leadership\n${leadership.map(generateLeadership).join('\n\n')}`
+		leadership: filledLeadership.length > 0
+			? `= Leadership\n${filledLeadership.map(generateLeadership).join('\n\n')}`
 			: '',
 		skills: generateSkills(skills),
 		achievements: generateAchievements(achievements)
@@ -359,10 +365,19 @@ export function generateTypstCode(data: ResumeData): string {
 }
 
 #let education-heading(institution, location, degree, major, start-date, end-date, body) = {
+  let degree-line = if degree != "" and major != "" {
+    [#degree, #major]
+  } else if degree != "" {
+    [#degree]
+  } else if major != "" {
+    [#major]
+  } else {
+    []
+  }
   generic_2x2(
     (70%, 30%),
     [#bold(institution)], [#bold(location)],
-    [#degree, #major], period_worked(start-date, end-date)
+    degree-line, period_worked(start-date, end-date)
   )
   v(-0.2em)
   if body != [] {
