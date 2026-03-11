@@ -6,6 +6,15 @@
   --link: #1d4ed8;
 }
 
+html {
+	scroll-behavior: smooth;
+	scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+	display: none;
+}
+
 body {
   @apply bg-gray-100 text-gray-900;
 }
