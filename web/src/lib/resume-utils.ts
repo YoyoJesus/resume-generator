@@ -1,4 +1,5 @@
-import type { ResumeData } from './types';
+import type { ResumeData, ExtractedResume } from './types';
+import { defaultResumeData, defaultFontSettings, defaultSectionOrder } from './types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -28,4 +29,23 @@ export function estimateOverOnePage(data: ResumeData): boolean {
 	lines += data.skills.length * 1;
 	lines += data.achievements.length * 2;
 	return lines > 55; // Rough estimate for one page
+}
+
+// Convert AI-extracted content into a full ResumeData: add ids + default styling.
+export function buildResumeFromExtraction(ex: ExtractedResume): ResumeData {
+	const withId = <T>(items: T[]): (T & { id: string })[] => items.map((item) => ({ ...item, id: generateId() }));
+
+	return {
+		personalInfo: { ...defaultResumeData.personalInfo, ...ex.personalInfo },
+		profile: { summary: ex.profile?.summary ?? '' },
+		education: withId(ex.education ?? []),
+		projects: withId(ex.projects ?? []),
+		workExperience: withId(ex.workExperience ?? []),
+		leadership: withId(ex.leadership ?? []),
+		skills: withId(ex.skills ?? []),
+		achievements: withId(ex.achievements ?? []),
+		colors: { ...defaultResumeData.colors },
+		fonts: { ...defaultFontSettings },
+		sectionOrder: [...defaultSectionOrder],
+	};
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ResumeData } from '$lib/types';
 	import { generateId } from '$lib/resume-utils';
+	import { aiFilled, clearHighlight } from '$lib/ai-highlight';
 
 	let { data }: { data: ResumeData } = $props();
 
@@ -17,13 +18,27 @@
 		<h2 class="text-lg font-semibold">Skills</h2>
 		<button class="primary text-sm" onclick={addSkillCategory}>+ Add</button>
 	</div>
-	{#each data.skills as skill}
+	{#each data.skills as skill, i}
 		<div class="border rounded-lg p-4 bg-gray-50">
 			<div class="flex gap-3 items-start">
 				<div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-					<div><label>Category</label><input type="text" bind:value={skill.category} placeholder="Languages" /></div>
 					<div>
-						<label>Skills</label><input type="text" bind:value={skill.skills} placeholder="Python, TypeScript, C++" />
+						<label>Category</label><input
+							type="text"
+							bind:value={skill.category}
+							placeholder="Languages"
+							class:ai-filled={aiFilled.has(`skills.${i}.category`)}
+							oninput={() => clearHighlight(`skills.${i}.category`)}
+						/>
+					</div>
+					<div>
+						<label>Skills</label><input
+							type="text"
+							bind:value={skill.skills}
+							placeholder="Python, TypeScript, C++"
+							class:ai-filled={aiFilled.has(`skills.${i}.skills`)}
+							oninput={() => clearHighlight(`skills.${i}.skills`)}
+						/>
 					</div>
 				</div>
 				<button class="danger text-sm px-2 py-1" onclick={() => removeSkillCategory(skill.id)}>X</button>

@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import wasm from 'vite-plugin-wasm';
@@ -7,5 +8,9 @@ export default defineConfig({
 	plugins: [wasm(), topLevelAwait(), sveltekit()],
 	optimizeDeps: {
 		exclude: ['@myriaddreamin/typst.ts'],
+	},
+	test: {
+		environment: 'node',
+		include: ['src/**/*.test.ts'],
 	},
 });
