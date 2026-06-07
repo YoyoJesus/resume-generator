@@ -8,6 +8,7 @@
 	import { estimateOverOnePage } from '$lib/resume-utils';
 
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import UploadModal from '$lib/components/UploadModal.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import TabBar from '$lib/components/TabBar.svelte';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
@@ -31,6 +32,8 @@
 	let typstCode = $derived(generateTypstCode(data));
 	let svgPreview = $state<string>('');
 	let isPreviewLoading = $state(false);
+	let uploadOpen = $state(false);
+	let showReviewBanner = $state(false);
 	let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 	let isOverOnePage = $derived(estimateOverOnePage(data));
 
@@ -98,12 +101,31 @@
 </script>
 
 <div class="min-h-screen bg-gray-100 flex flex-col">
-	<AppHeader bind:showCode {isCompiling} {compileError} {isOverOnePage} onDownload={downloadPdfFile} />
+	<AppHeader
+		bind:showCode
+		{isCompiling}
+		{compileError}
+		{isOverOnePage}
+		onDownload={downloadPdfFile}
+		onUpload={() => (uploadOpen = true)}
+	/>
 
 	<main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			<!-- Form Panel -->
 			<div class="bg-white rounded-lg shadow p-6 overflow-auto max-h-[calc(100vh-10rem)]">
+				{#if showReviewBanner}
+					<div
+						class="mb-4 flex items-start justify-between gap-2 rounded border border-purple-300 bg-purple-50 px-3 py-2 text-sm text-purple-800"
+					>
+						<span>AI filled the highlighted (purple) fields — please review them for accuracy.</span>
+						<button
+							class="secondary text-xs px-2 py-0.5"
+							onclick={() => (showReviewBanner = false)}
+							aria-label="Dismiss">X</button
+						>
+					</div>
+				{/if}
 				<TabBar {tabs} bind:activeTab />
 
 				{#if activeTab === 'personal'}
@@ -137,4 +159,5 @@
 	</main>
 
 	<AppFooter />
+	<UploadModal bind:open={uploadOpen} onApplied={() => (showReviewBanner = true)} />
 </div>

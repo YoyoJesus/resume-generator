@@ -10,7 +10,10 @@ const config = {
 		},
 	},
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({
+			// Pin the serverless runtime so builds don't depend on the local Node version.
+			runtime: 'nodejs22.x',
+		}),
 	},
 };
 

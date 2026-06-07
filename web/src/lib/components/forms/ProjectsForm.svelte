@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ResumeData } from '$lib/types';
 	import { generateId } from '$lib/resume-utils';
+	import { aiFilled, clearHighlight } from '$lib/ai-highlight';
 	import EntryCard from '../EntryCard.svelte';
 	import BulletEditor from '../BulletEditor.svelte';
 
@@ -22,22 +23,49 @@
 	{#each data.projects as project, i}
 		<EntryCard index={i} onRemove={() => removeProject(project.id)}>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-				<div><label>Project Name</label><input type="text" bind:value={project.name} placeholder="My Project" /></div>
+				<div>
+					<label>Project Name</label><input
+						type="text"
+						bind:value={project.name}
+						placeholder="My Project"
+						class:ai-filled={aiFilled.has(`projects.${i}.name`)}
+						oninput={() => clearHighlight(`projects.${i}.name`)}
+					/>
+				</div>
 				<div>
 					<label>Tech Stack</label><input
 						type="text"
 						bind:value={project.stack}
 						placeholder="React, Node.js, PostgreSQL"
+						class:ai-filled={aiFilled.has(`projects.${i}.stack`)}
+						oninput={() => clearHighlight(`projects.${i}.stack`)}
 					/>
 				</div>
 				<div>
-					<label>Award (optional)</label><input type="text" bind:value={project.award} placeholder="Hackathon Winner" />
+					<label>Award (optional)</label><input
+						type="text"
+						bind:value={project.award}
+						placeholder="Hackathon Winner"
+						class:ai-filled={aiFilled.has(`projects.${i}.award`)}
+						oninput={() => clearHighlight(`projects.${i}.award`)}
+					/>
 				</div>
 				<div>
-					<label>Project URL</label><input type="text" bind:value={project.url} placeholder="https://github.com/..." />
+					<label>Project URL</label><input
+						type="text"
+						bind:value={project.url}
+						placeholder="https://github.com/..."
+						class:ai-filled={aiFilled.has(`projects.${i}.url`)}
+						oninput={() => clearHighlight(`projects.${i}.url`)}
+					/>
 				</div>
 			</div>
-			<BulletEditor bind:bullets={project.bullets} label="Description" placeholder="Describe what you built..." />
+			<BulletEditor
+				bind:bullets={project.bullets}
+				label="Description"
+				path={`projects.${i}.bullets`}
+				placeholder="Describe what you built..."
+			/>
 		</EntryCard>
 	{/each}
 	{#if data.projects.length === 0}<p class="text-gray-500 text-center py-8">No projects added yet.</p>{/if}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ResumeData } from '$lib/types';
 	import { generateId } from '$lib/resume-utils';
+	import { aiFilled, clearHighlight } from '$lib/ai-highlight';
 	import EntryCard from '../EntryCard.svelte';
 	import DateRange from '../DateRange.svelte';
 	import BulletEditor from '../BulletEditor.svelte';
@@ -37,20 +38,56 @@
 		<EntryCard index={i} onRemove={() => removeEducation(edu.id)}>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 				<div>
-					<label>Institution</label><input type="text" bind:value={edu.institution} placeholder="University Name" />
+					<label>Institution</label><input
+						type="text"
+						bind:value={edu.institution}
+						placeholder="University Name"
+						class:ai-filled={aiFilled.has(`education.${i}.institution`)}
+						oninput={() => clearHighlight(`education.${i}.institution`)}
+					/>
 				</div>
-				<div><label>Location</label><input type="text" bind:value={edu.location} placeholder="City, State" /></div>
-				<div><label>Degree</label><input type="text" bind:value={edu.degree} placeholder="Bachelor of Sciences" /></div>
-				<div><label>Major</label><input type="text" bind:value={edu.major} placeholder="Computer Science" /></div>
+				<div>
+					<label>Location</label><input
+						type="text"
+						bind:value={edu.location}
+						placeholder="City, State"
+						class:ai-filled={aiFilled.has(`education.${i}.location`)}
+						oninput={() => clearHighlight(`education.${i}.location`)}
+					/>
+				</div>
+				<div>
+					<label>Degree</label><input
+						type="text"
+						bind:value={edu.degree}
+						placeholder="Bachelor of Sciences"
+						class:ai-filled={aiFilled.has(`education.${i}.degree`)}
+						oninput={() => clearHighlight(`education.${i}.degree`)}
+					/>
+				</div>
+				<div>
+					<label>Major</label><input
+						type="text"
+						bind:value={edu.major}
+						placeholder="Computer Science"
+						class:ai-filled={aiFilled.has(`education.${i}.major`)}
+						oninput={() => clearHighlight(`education.${i}.major`)}
+					/>
+				</div>
 				<DateRange
 					bind:startDate={edu.startDate}
 					bind:endDate={edu.endDate}
 					bind:isPresent={edu.isPresent}
+					path={`education.${i}`}
 					endLabel="End Date (Expected)"
 					presentLabel="Currently studying"
 				/>
 			</div>
-			<BulletEditor bind:bullets={edu.bullets} label="Honors/GPA" placeholder="Relevant coursework, honors, GPA..." />
+			<BulletEditor
+				bind:bullets={edu.bullets}
+				label="Honors/GPA"
+				path={`education.${i}.bullets`}
+				placeholder="Relevant coursework, honors, GPA..."
+			/>
 		</EntryCard>
 	{/each}
 	{#if data.education.length === 0}<p class="text-gray-500 text-center py-8">No education added yet.</p>{/if}

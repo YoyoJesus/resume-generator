@@ -153,3 +153,15 @@ export const defaultResumeData: ResumeData = {
 	fonts: { ...defaultFontSettings },
 	sectionOrder: [...defaultSectionOrder],
 };
+
+// Shape returned by the AI extraction endpoint (content only; ids + styling added client-side).
+export interface ExtractedResume {
+	personalInfo: PersonalInfo;
+	profile: Profile;
+	education: Omit<Education, 'id'>[];
+	projects: Omit<Project, 'id'>[];
+	workExperience: Omit<WorkExperience, 'id'>[];
+	leadership: Omit<Leadership, 'id'>[];
+	skills: Omit<SkillCategory, 'id'>[];
+	achievements: Omit<Achievement, 'id'>[];
+}

@@ -5,12 +5,14 @@
 		compileError,
 		isOverOnePage,
 		onDownload,
+		onUpload,
 	}: {
 		showCode: boolean;
 		isCompiling: boolean;
 		compileError: string | null;
 		isOverOnePage: boolean;
 		onDownload: () => void;
+		onUpload: () => void;
 	} = $props();
 </script>
 
@@ -19,6 +21,7 @@
 		<div class="flex items-center justify-between flex-wrap gap-2">
 			<h1 class="text-2xl font-bold text-gray-900">Resume Builder</h1>
 			<div class="flex gap-2">
+				<button class="secondary" onclick={onUpload}>Upload your Resume</button>
 				<button class="secondary" onclick={() => (showCode = !showCode)}>
 					{showCode ? 'Preview' : 'Typst'}
 				</button>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ResumeData } from '$lib/types';
 	import { generateId } from '$lib/resume-utils';
+	import { aiFilled, clearHighlight } from '$lib/ai-highlight';
 	import EntryCard from '../EntryCard.svelte';
 	import DateRange from '../DateRange.svelte';
 	import BulletEditor from '../BulletEditor.svelte';
@@ -35,27 +36,45 @@
 	{#each data.leadership as lead, i}
 		<EntryCard index={i} onRemove={() => removeLeadership(lead.id)}>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-				<div><label>Title</label><input type="text" bind:value={lead.title} placeholder="Team Lead" /></div>
+				<div>
+					<label>Title</label><input
+						type="text"
+						bind:value={lead.title}
+						placeholder="Team Lead"
+						class:ai-filled={aiFilled.has(`leadership.${i}.title`)}
+						oninput={() => clearHighlight(`leadership.${i}.title`)}
+					/>
+				</div>
 				<div>
 					<label>Organization</label><input
 						type="text"
 						bind:value={lead.organization}
 						placeholder="Organization Name"
+						class:ai-filled={aiFilled.has(`leadership.${i}.organization`)}
+						oninput={() => clearHighlight(`leadership.${i}.organization`)}
 					/>
 				</div>
 				<div class="md:col-span-2">
-					<label>Location</label><input type="text" bind:value={lead.location} placeholder="City, State" />
+					<label>Location</label><input
+						type="text"
+						bind:value={lead.location}
+						placeholder="City, State"
+						class:ai-filled={aiFilled.has(`leadership.${i}.location`)}
+						oninput={() => clearHighlight(`leadership.${i}.location`)}
+					/>
 				</div>
 				<DateRange
 					bind:startDate={lead.startDate}
 					bind:endDate={lead.endDate}
 					bind:isPresent={lead.isPresent}
+					path={`leadership.${i}`}
 					presentLabel="Currently active"
 				/>
 			</div>
 			<BulletEditor
 				bind:bullets={lead.bullets}
 				label="Responsibilities"
+				path={`leadership.${i}.bullets`}
 				placeholder="Describe your leadership responsibilities..."
 			/>
 		</EntryCard>
