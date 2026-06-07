@@ -78,6 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const response = await client.responses.create({
 			model: MODEL,
 			input: [{ role: 'user', content }],
+			reasoning: { effort: 'medium' },
 			text: {
 				format: {
 					type: 'json_schema',

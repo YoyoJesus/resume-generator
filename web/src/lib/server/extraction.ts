@@ -64,6 +64,8 @@ export const EXTRACTION_PROMPT = [
 	'For linkedin and github, return just the username/handle, not the full URL.',
 	'Do not invent or infer data that is not in the resume.',
 	'You can try to fill in sections with data from other sections if the information is clearly relevant (e.g. a project mentioned in a work experience bullet).',
+	'In fact, do your best to fill in as much of the schema as possible, but never fabricate details. If you can reasonably infer a detail (e.g. a linkedin URL from a name), you may do so, but be conservative and prioritize accuracy over completeness.',
+	'Do try to complete the schema as much as possible using any relevant information in the resume, but do not fabricate details that are not explicitly stated or very clearly implied. If you can reasonably infer a detail (e.g. a linkedin URL from a name), you may do so, but be conservative and prioritize accuracy over completeness.',
 ].join(' ');
 
 const stringArray = { type: 'array', items: { type: 'string' } } as const;
