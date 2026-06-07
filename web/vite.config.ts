@@ -6,6 +6,6 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 export default defineConfig({
 	plugins: [wasm(), topLevelAwait(), sveltekit()],
 	optimizeDeps: {
-		exclude: ['@myriaddreamin/typst.ts']
-	}
+		exclude: ['@myriaddreamin/typst.ts'],
+	},
 });

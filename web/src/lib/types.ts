@@ -86,19 +86,19 @@ export const defaultFontSettings: FontSettings = {
 	baseSize: 8.7,
 	nameSize: 20.7,
 	headingSize: 16.8,
-	contactSize: 11.2
+	contactSize: 11.2,
 };
 
 export type SectionId = 'profile' | 'education' | 'projects' | 'experience' | 'leadership' | 'skills' | 'achievements';
 
 export const defaultSectionOrder: SectionId[] = [
 	'profile',
-	'education', 
+	'education',
 	'projects',
 	'experience',
 	'leadership',
 	'skills',
-	'achievements'
+	'achievements',
 ];
 
 export const sectionLabels: Record<SectionId, string> = {
@@ -108,7 +108,7 @@ export const sectionLabels: Record<SectionId, string> = {
 	experience: 'Experience',
 	leadership: 'Leadership',
 	skills: 'Skills',
-	achievements: 'Achievements'
+	achievements: 'Achievements',
 };
 
 export interface ResumeData {
@@ -133,10 +133,10 @@ export const defaultResumeData: ResumeData = {
 		email: '',
 		website: '',
 		linkedin: '',
-		github: ''
+		github: '',
 	},
 	profile: {
-		summary: ''
+		summary: '',
 	},
 	education: [],
 	projects: [],
@@ -148,8 +148,8 @@ export const defaultResumeData: ResumeData = {
 		headColor: '#22227f',
 		textColor: '#1b1b1b',
 		accentColor: '#22328A',
-		linkColor: '#1d4ed8'
+		linkColor: '#1d4ed8',
 	},
 	fonts: { ...defaultFontSettings },
-	sectionOrder: [...defaultSectionOrder]
+	sectionOrder: [...defaultSectionOrder],
 };

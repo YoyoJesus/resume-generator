@@ -1,4 +1,13 @@
-import type { ResumeData, WorkExperience, Project, Education, Leadership, Achievement, SkillCategory, SectionId } from './types';
+import type {
+	ResumeData,
+	WorkExperience,
+	Project,
+	Education,
+	Leadership,
+	Achievement,
+	SkillCategory,
+	SectionId,
+} from './types';
 
 function formatDate(dateStr: string): string {
 	if (!dateStr) return 'datetime.today()';
@@ -17,11 +26,7 @@ function formatDisplayDate(dateStr: string): string {
 }
 
 function escapeTypst(str: string): string {
-	return str
-		.replace(/\\/g, '\\\\')
-		.replace(/"/g, '\\"')
-		.replace(/#/g, '\\#')
-		.replace(/\$/g, '\\$');
+	return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/#/g, '\\#').replace(/\$/g, '\\$');
 }
 
 function generateProfile(summary: string): string {
@@ -33,8 +38,8 @@ ${escapeTypst(summary)}`;
 function generateEducation(edu: Education): string {
 	const endDate = edu.isPresent ? '"Present"' : formatDate(edu.endDate);
 	const bullets = edu.bullets
-		.filter(b => b.trim())
-		.map(b => `  - ${escapeTypst(b)}`)
+		.filter((b) => b.trim())
+		.map((b) => `  - ${escapeTypst(b)}`)
 		.join('\n');
 
 	return `#education-heading(
@@ -51,8 +56,8 @@ ${bullets}
 
 function generateProject(project: Project): string {
 	const bullets = project.bullets
-		.filter(b => b.trim())
-		.map(b => `  - ${escapeTypst(b)}`)
+		.filter((b) => b.trim())
+		.map((b) => `  - ${escapeTypst(b)}`)
 		.join('\n');
 
 	return `#project-heading(
@@ -68,8 +73,8 @@ ${bullets}
 function generateWorkExperience(work: WorkExperience): string {
 	const endDate = work.isPresent ? '"Present"' : formatDate(work.endDate);
 	const bullets = work.bullets
-		.filter(b => b.trim())
-		.map(b => `  - ${escapeTypst(b)}`)
+		.filter((b) => b.trim())
+		.map((b) => `  - ${escapeTypst(b)}`)
 		.join('\n');
 
 	return `#work-heading(
@@ -86,8 +91,8 @@ ${bullets}
 function generateLeadership(lead: Leadership): string {
 	const endDate = lead.isPresent ? '"Present"' : formatDate(lead.endDate);
 	const bullets = lead.bullets
-		.filter(b => b.trim())
-		.map(b => `  - ${escapeTypst(b)}`)
+		.filter((b) => b.trim())
+		.map((b) => `  - ${escapeTypst(b)}`)
 		.join('\n');
 
 	return `#work-heading(
@@ -105,8 +110,8 @@ function generateSkills(skills: SkillCategory[]): string {
 	if (skills.length === 0) return '';
 
 	const skillLines = skills
-		.filter(s => s.category.trim() && s.skills.trim())
-		.map(s => `- *${escapeTypst(s.category)}:* ${escapeTypst(s.skills)}`)
+		.filter((s) => s.category.trim() && s.skills.trim())
+		.map((s) => `- *${escapeTypst(s.category)}:* ${escapeTypst(s.skills)}`)
 		.join('\n');
 
 	if (!skillLines) return '';
@@ -121,8 +126,8 @@ function generateAchievements(achievements: Achievement[]): string {
 	if (achievements.length === 0) return '';
 
 	const achievementItems = achievements
-		.filter(a => a.title.trim())
-		.map(a => {
+		.filter((a) => a.title.trim())
+		.map((a) => {
 			const dateDisplay = formatDisplayDate(a.date);
 			const descPart = a.description.trim() ? `\n${escapeTypst(a.description)}` : '';
 			return `#achievement-heading("${escapeTypst(a.title)}", "${escapeTypst(dateDisplay)}")[${descPart}]`;
@@ -136,35 +141,41 @@ ${achievementItems}`;
 }
 
 export function generateTypstCode(data: ResumeData): string {
-	const { personalInfo, profile, education, projects, workExperience, leadership, skills, achievements, colors, fonts, sectionOrder } = data;
+	const {
+		personalInfo,
+		profile,
+		education,
+		projects,
+		workExperience,
+		leadership,
+		skills,
+		achievements,
+		colors,
+		fonts,
+		sectionOrder,
+	} = data;
 
-	const filledEducation = education.filter(e => e.institution.trim() || e.degree.trim() || e.major.trim());
-	const filledProjects = projects.filter(p => p.name.trim());
-	const filledExperience = workExperience.filter(w => w.title.trim() || w.company.trim());
-	const filledLeadership = leadership.filter(l => l.title.trim() || l.organization.trim());
+	const filledEducation = education.filter((e) => e.institution.trim() || e.degree.trim() || e.major.trim());
+	const filledProjects = projects.filter((p) => p.name.trim());
+	const filledExperience = workExperience.filter((w) => w.title.trim() || w.company.trim());
+	const filledLeadership = leadership.filter((l) => l.title.trim() || l.organization.trim());
 
 	const sections: Record<SectionId, string> = {
 		profile: generateProfile(profile.summary),
-		education: filledEducation.length > 0
-			? `= Education\n${filledEducation.map(generateEducation).join('\n\n')}`
-			: '',
-		projects: filledProjects.length > 0
-			? `= Projects\n${filledProjects.map(generateProject).join('\n\n')}`
-			: '',
-		experience: filledExperience.length > 0
-			? `= Experience\n${filledExperience.map(generateWorkExperience).join('\n\n')}`
-			: '',
-		leadership: filledLeadership.length > 0
-			? `= Leadership\n${filledLeadership.map(generateLeadership).join('\n\n')}`
-			: '',
+		education: filledEducation.length > 0 ? `= Education\n${filledEducation.map(generateEducation).join('\n\n')}` : '',
+		projects: filledProjects.length > 0 ? `= Projects\n${filledProjects.map(generateProject).join('\n\n')}` : '',
+		experience:
+			filledExperience.length > 0 ? `= Experience\n${filledExperience.map(generateWorkExperience).join('\n\n')}` : '',
+		leadership:
+			filledLeadership.length > 0 ? `= Leadership\n${filledLeadership.map(generateLeadership).join('\n\n')}` : '',
 		skills: generateSkills(skills),
-		achievements: generateAchievements(achievements)
+		achievements: generateAchievements(achievements),
 	};
 
 	// Generate sections in the specified order
 	const orderedSections = sectionOrder
-		.map(id => sections[id])
-		.filter(section => section.trim() !== '')
+		.map((id) => sections[id])
+		.filter((section) => section.trim() !== '')
 		.join('\n\n');
 
 	return `#let head-color = rgb("${colors.headColor}")

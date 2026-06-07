@@ -26,7 +26,7 @@ function createResumeStore() {
 			if (typeof window !== 'undefined') {
 				localStorage.setItem('resumeData', JSON.stringify(data));
 			}
-		}
+		},
 	};
 }
 

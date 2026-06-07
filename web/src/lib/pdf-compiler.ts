@@ -13,10 +13,10 @@ export async function initCompiler(): Promise<void> {
 		try {
 			// Configure the compiler to load WASM from static folder
 			$typst.setCompilerInitOptions({
-				getModule: () => fetch('/typst_ts_web_compiler_bg.wasm').then(r => r.arrayBuffer())
+				getModule: () => fetch('/typst_ts_web_compiler_bg.wasm').then((r) => r.arrayBuffer()),
 			});
 			$typst.setRendererInitOptions({
-				getModule: () => fetch('/typst_ts_renderer_bg.wasm').then(r => r.arrayBuffer())
+				getModule: () => fetch('/typst_ts_renderer_bg.wasm').then((r) => r.arrayBuffer()),
 			});
 			// Initialize by doing a simple compile - this will load fonts from CDN
 			await $typst.pdf({ mainContent: '' });
