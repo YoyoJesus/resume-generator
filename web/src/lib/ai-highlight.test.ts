@@ -30,6 +30,7 @@ const sample: ExtractedResume = {
 	leadership: [],
 	skills: [{ category: 'Lang', skills: 'TS' }],
 	achievements: [],
+	clearance: [],
 };
 
 describe('setHighlightsFromData', () => {

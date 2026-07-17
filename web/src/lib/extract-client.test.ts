@@ -31,6 +31,7 @@ const sample: ExtractedResume = {
 	leadership: [],
 	skills: [{ category: 'Languages', skills: 'Analytical Engine' }],
 	achievements: [],
+	clearance: [],
 };
 
 describe('buildResumeFromExtraction', () => {
