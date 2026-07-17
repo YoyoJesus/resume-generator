@@ -14,6 +14,7 @@
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
 	import PersonalForm from '$lib/components/forms/PersonalForm.svelte';
 	import ProfileForm from '$lib/components/forms/ProfileForm.svelte';
+	import ClearanceForm from '$lib/components/forms/ClearanceForm.svelte';
 	import EducationForm from '$lib/components/forms/EducationForm.svelte';
 	import ProjectsForm from '$lib/components/forms/ProjectsForm.svelte';
 	import ExperienceForm from '$lib/components/forms/ExperienceForm.svelte';
@@ -88,6 +89,7 @@
 	const tabs = [
 		{ id: 'personal', label: 'Personal' },
 		{ id: 'profile', label: 'Profile' },
+		{ id: 'clearance', label: 'Clearance' },
 		{ id: 'education', label: 'Education' },
 		{ id: 'projects', label: 'Projects' },
 		{ id: 'experience', label: 'Experience' },
@@ -132,6 +134,8 @@
 					<PersonalForm {data} />
 				{:else if activeTab === 'profile'}
 					<ProfileForm {data} />
+				{:else if activeTab === 'clearance'}
+					<ClearanceForm {data} />
 				{:else if activeTab === 'education'}
 					<EducationForm {data} />
 				{:else if activeTab === 'projects'}
