@@ -1,4 +1,4 @@
-export const MODEL = 'gpt-5.4-mini';
+export const MODEL = 'gpt-5.6-luna';
 
 export type ExtractErrorCode =
 	| 'invalid_file'
