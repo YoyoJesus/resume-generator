@@ -30,7 +30,7 @@ const sample: ExtractedResume = {
 	leadership: [],
 	skills: [{ category: 'Lang', skills: 'TS' }],
 	achievements: [],
-	clearance: [],
+	clearance: [{ level: 'Secret', status: 'Active', dateGranted: '2022-06' }],
 };
 
 describe('setHighlightsFromData', () => {
@@ -51,6 +51,13 @@ describe('setHighlightsFromData', () => {
 		setHighlightsFromData(buildResumeFromExtraction(sample));
 		expect(aiFilled.has('workExperience.0.title')).toBe(true);
 		expect(aiFilled.has('skills.0.category')).toBe(true);
+	});
+
+	it('marks clearance fields', () => {
+		setHighlightsFromData(buildResumeFromExtraction(sample));
+		expect(aiFilled.has('clearance.0.level')).toBe(true);
+		expect(aiFilled.has('clearance.0.status')).toBe(true);
+		expect(aiFilled.has('clearance.0.dateGranted')).toBe(true);
 	});
 
 	it('marks only non-empty bullets by index', () => {

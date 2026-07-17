@@ -29,7 +29,15 @@ function markObject(prefix: string, obj: Record<string, unknown>): void {
 	}
 }
 
-const ARRAY_SECTIONS = ['education', 'projects', 'workExperience', 'leadership', 'skills', 'achievements'] as const;
+const ARRAY_SECTIONS = [
+	'education',
+	'projects',
+	'workExperience',
+	'leadership',
+	'skills',
+	'achievements',
+	'clearance',
+] as const;
 
 export function setHighlightsFromData(data: ResumeData): void {
 	aiFilled.clear();
