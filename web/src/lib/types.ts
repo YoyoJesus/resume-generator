@@ -62,6 +62,16 @@ export interface Achievement {
 	description: string;
 }
 
+export type ClearanceLevel = 'Confidential' | 'Secret' | 'Top Secret' | 'Top Secret/SCI' | 'Public Trust';
+export type ClearanceStatus = 'Active' | 'Inactive' | 'Eligible';
+
+export interface Clearance {
+	id: string;
+	level: ClearanceLevel;
+	status: ClearanceStatus;
+	dateGranted: string;
+}
+
 export interface SkillCategory {
 	id: string;
 	category: string;
@@ -89,10 +99,19 @@ export const defaultFontSettings: FontSettings = {
 	contactSize: 11.2,
 };
 
-export type SectionId = 'profile' | 'education' | 'projects' | 'experience' | 'leadership' | 'skills' | 'achievements';
+export type SectionId =
+	| 'profile'
+	| 'clearance'
+	| 'education'
+	| 'projects'
+	| 'experience'
+	| 'leadership'
+	| 'skills'
+	| 'achievements';
 
 export const defaultSectionOrder: SectionId[] = [
 	'profile',
+	'clearance',
 	'education',
 	'projects',
 	'experience',
@@ -103,6 +122,7 @@ export const defaultSectionOrder: SectionId[] = [
 
 export const sectionLabels: Record<SectionId, string> = {
 	profile: 'Profile',
+	clearance: 'Clearance',
 	education: 'Education',
 	projects: 'Projects',
 	experience: 'Experience',
@@ -114,6 +134,7 @@ export const sectionLabels: Record<SectionId, string> = {
 export interface ResumeData {
 	personalInfo: PersonalInfo;
 	profile: Profile;
+	clearance: Clearance[];
 	education: Education[];
 	projects: Project[];
 	workExperience: WorkExperience[];
@@ -138,6 +159,7 @@ export const defaultResumeData: ResumeData = {
 	profile: {
 		summary: '',
 	},
+	clearance: [],
 	education: [],
 	projects: [],
 	workExperience: [],
@@ -164,4 +186,5 @@ export interface ExtractedResume {
 	leadership: Omit<Leadership, 'id'>[];
 	skills: Omit<SkillCategory, 'id'>[];
 	achievements: Omit<Achievement, 'id'>[];
+	clearance: Omit<Clearance, 'id'>[];
 }
