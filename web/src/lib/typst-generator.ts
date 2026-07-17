@@ -6,6 +6,7 @@ import type {
 	Leadership,
 	Achievement,
 	SkillCategory,
+	Clearance,
 	SectionId,
 } from './types';
 
@@ -140,10 +141,28 @@ function generateAchievements(achievements: Achievement[]): string {
 ${achievementItems}`;
 }
 
+function generateClearance(clearance: Clearance[]): string {
+	if (clearance.length === 0) return '';
+
+	const items = clearance
+		.filter((c) => c.level)
+		.map((c) => {
+			const dateDisplay = formatDisplayDate(c.dateGranted);
+			return `#achievement-heading("${escapeTypst(c.level)} (${escapeTypst(c.status)})", "${escapeTypst(dateDisplay)}")[]`;
+		})
+		.join('\n\n');
+
+	if (!items) return '';
+
+	return `= Clearance
+${items}`;
+}
+
 export function generateTypstCode(data: ResumeData): string {
 	const {
 		personalInfo,
 		profile,
+		clearance,
 		education,
 		projects,
 		workExperience,
@@ -162,6 +181,7 @@ export function generateTypstCode(data: ResumeData): string {
 
 	const sections: Record<SectionId, string> = {
 		profile: generateProfile(profile.summary),
+		clearance: generateClearance(clearance),
 		education: filledEducation.length > 0 ? `= Education\n${filledEducation.map(generateEducation).join('\n\n')}` : '',
 		projects: filledProjects.length > 0 ? `= Projects\n${filledProjects.map(generateProject).join('\n\n')}` : '',
 		experience:
