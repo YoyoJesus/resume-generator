@@ -83,6 +83,7 @@ export const RESUME_SCHEMA = {
 		'leadership',
 		'skills',
 		'achievements',
+		'clearance',
 	],
 	properties: {
 		personalInfo: {
@@ -194,6 +195,22 @@ export const RESUME_SCHEMA = {
 					title: { type: 'string' },
 					date: { type: 'string' },
 					description: { type: 'string' },
+				},
+			},
+		},
+		clearance: {
+			type: 'array',
+			items: {
+				type: 'object',
+				additionalProperties: false,
+				required: ['level', 'status', 'dateGranted'],
+				properties: {
+					level: {
+						type: 'string',
+						enum: ['Confidential', 'Secret', 'Top Secret', 'Top Secret/SCI', 'Public Trust'],
+					},
+					status: { type: 'string', enum: ['Active', 'Inactive', 'Eligible'] },
+					dateGranted: { type: 'string' },
 				},
 			},
 		},

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapOpenAIError } from './extraction';
+import { mapOpenAIError, RESUME_SCHEMA } from './extraction';
 
 describe('mapOpenAIError', () => {
 	it('maps insufficient_quota 429 to quota_exceeded', () => {
@@ -34,5 +34,23 @@ describe('mapOpenAIError', () => {
 
 	it('always includes a non-empty human message', () => {
 		expect(mapOpenAIError({ status: 429 }).message.length).toBeGreaterThan(0);
+	});
+});
+
+describe('RESUME_SCHEMA clearance field', () => {
+	it('requires a clearance array', () => {
+		expect(RESUME_SCHEMA.required).toContain('clearance');
+	});
+
+	it('constrains level and status to fixed enums', () => {
+		const clearanceItems = RESUME_SCHEMA.properties.clearance.items;
+		expect(clearanceItems.properties.level.enum).toEqual([
+			'Confidential',
+			'Secret',
+			'Top Secret',
+			'Top Secret/SCI',
+			'Public Trust',
+		]);
+		expect(clearanceItems.properties.status.enum).toEqual(['Active', 'Inactive', 'Eligible']);
 	});
 });
