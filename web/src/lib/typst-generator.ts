@@ -9,45 +9,67 @@ import type {
 	Clearance,
 	SectionId,
 } from './types';
+import { defaultFontSettings, defaultResumeData } from './types';
+import { typstString, typstMarkup, typstNumber, typstColor, typstUrl } from './typst-escape';
+
+// Dates land in Typst code position, so anything that is not a plain YYYY-MM is rejected outright
+// rather than escaped.
+const YEAR_MONTH = /^(\d{4})-(\d{1,2})$/;
+
+function parseYearMonth(dateStr: string): { year: number; month: number } | null {
+	const match = YEAR_MONTH.exec(dateStr.trim());
+	if (!match) return null;
+	const month = Number(match[2]);
+	if (month < 1 || month > 12) return null;
+	return { year: Number(match[1]), month };
+}
 
 function formatDate(dateStr: string): string {
-	if (!dateStr) return 'datetime.today()';
-	const [year, month] = dateStr.split('-');
-	if (!year || !month || isNaN(parseInt(month))) return 'datetime.today()';
-	return `datetime(year: ${year}, month: ${parseInt(month)}, day: 1)`;
+	const parsed = parseYearMonth(dateStr);
+	if (!parsed) return 'datetime.today()';
+	return `datetime(year: ${parsed.year}, month: ${parsed.month}, day: 1)`;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function formatDisplayDate(dateStr: string): string {
 	if (!dateStr) return '';
-	const [year, month] = dateStr.split('-');
-	if (!year || !month || isNaN(parseInt(month))) return dateStr;
-	return `${MONTHS[parseInt(month) - 1]} ${year}`;
+	const parsed = parseYearMonth(dateStr);
+	if (!parsed) return dateStr;
+	return `${MONTHS[parsed.month - 1]} ${parsed.year}`;
 }
 
-function escapeTypst(str: string): string {
-	return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/#/g, '\\#').replace(/\$/g, '\\$');
+// Font sizes go into code position; the bounds mirror the sliders in FontsForm.
+const FONT_BOUNDS: Record<keyof typeof defaultFontSettings, [number, number]> = {
+	baseSize: [6, 14],
+	nameSize: [14, 32],
+	headingSize: [10, 24],
+	contactSize: [7, 16],
+};
+
+function fontSize(fonts: ResumeData['fonts'], key: keyof typeof defaultFontSettings): number {
+	const [min, max] = FONT_BOUNDS[key];
+	return typstNumber(fonts[key], defaultFontSettings[key], min, max);
 }
 
 function generateProfile(summary: string): string {
 	if (!summary.trim()) return '';
 	return `= Profile
-${escapeTypst(summary)}`;
+${typstMarkup(summary)}`;
 }
 
 function generateEducation(edu: Education): string {
 	const endDate = edu.isPresent ? '"Present"' : formatDate(edu.endDate);
 	const bullets = edu.bullets
 		.filter((b) => b.trim())
-		.map((b) => `  - ${escapeTypst(b)}`)
+		.map((b) => `  - ${typstMarkup(b)}`)
 		.join('\n');
 
 	return `#education-heading(
-  "${escapeTypst(edu.institution)}",
-  "${escapeTypst(edu.location)}",
-  "${escapeTypst(edu.degree)}",
-  "${escapeTypst(edu.major)}",
+  "${typstString(edu.institution)}",
+  "${typstString(edu.location)}",
+  "${typstString(edu.degree)}",
+  "${typstString(edu.major)}",
   ${formatDate(edu.startDate)},
   ${endDate}
 )[
@@ -58,14 +80,14 @@ ${bullets}
 function generateProject(project: Project): string {
 	const bullets = project.bullets
 		.filter((b) => b.trim())
-		.map((b) => `  - ${escapeTypst(b)}`)
+		.map((b) => `  - ${typstMarkup(b)}`)
 		.join('\n');
 
 	return `#project-heading(
-  "${escapeTypst(project.name)}",
-  stack: "${escapeTypst(project.stack)}",
-  project-url: "${escapeTypst(project.url)}",
-  award: "${escapeTypst(project.award)}"
+  "${typstString(project.name)}",
+  stack: "${typstString(project.stack)}",
+  project-url: "${typstString(typstUrl(project.url))}",
+  award: "${typstString(project.award)}"
 )[
 ${bullets}
 ]`;
@@ -75,13 +97,13 @@ function generateWorkExperience(work: WorkExperience): string {
 	const endDate = work.isPresent ? '"Present"' : formatDate(work.endDate);
 	const bullets = work.bullets
 		.filter((b) => b.trim())
-		.map((b) => `  - ${escapeTypst(b)}`)
+		.map((b) => `  - ${typstMarkup(b)}`)
 		.join('\n');
 
 	return `#work-heading(
-  "${escapeTypst(work.title)}",
-  "${escapeTypst(work.company)}",
-  "${escapeTypst(work.location)}",
+  "${typstString(work.title)}",
+  "${typstString(work.company)}",
+  "${typstString(work.location)}",
   ${formatDate(work.startDate)},
   ${endDate}
 )[
@@ -93,13 +115,13 @@ function generateLeadership(lead: Leadership): string {
 	const endDate = lead.isPresent ? '"Present"' : formatDate(lead.endDate);
 	const bullets = lead.bullets
 		.filter((b) => b.trim())
-		.map((b) => `  - ${escapeTypst(b)}`)
+		.map((b) => `  - ${typstMarkup(b)}`)
 		.join('\n');
 
 	return `#work-heading(
-  "${escapeTypst(lead.title)}",
-  "${escapeTypst(lead.organization)}",
-  "${escapeTypst(lead.location)}",
+  "${typstString(lead.title)}",
+  "${typstString(lead.organization)}",
+  "${typstString(lead.location)}",
   ${formatDate(lead.startDate)},
   ${endDate}
 )[
@@ -112,7 +134,7 @@ function generateSkills(skills: SkillCategory[]): string {
 
 	const skillLines = skills
 		.filter((s) => s.category.trim() && s.skills.trim())
-		.map((s) => `- *${escapeTypst(s.category)}:* ${escapeTypst(s.skills)}`)
+		.map((s) => `- *${typstMarkup(s.category)}:* ${typstMarkup(s.skills)}`)
 		.join('\n');
 
 	if (!skillLines) return '';
@@ -130,8 +152,8 @@ function generateAchievements(achievements: Achievement[]): string {
 		.filter((a) => a.title.trim())
 		.map((a) => {
 			const dateDisplay = formatDisplayDate(a.date);
-			const descPart = a.description.trim() ? `\n${escapeTypst(a.description)}` : '';
-			return `#achievement-heading("${escapeTypst(a.title)}", "${escapeTypst(dateDisplay)}")[${descPart}]`;
+			const descPart = a.description.trim() ? `\n${typstMarkup(a.description)}` : '';
+			return `#achievement-heading("${typstString(a.title)}", "${typstString(dateDisplay)}")[${descPart}]`;
 		})
 		.join('\n\n');
 
@@ -148,7 +170,7 @@ function generateClearance(clearance: Clearance[]): string {
 		.filter((c) => c.level)
 		.map((c) => {
 			const dateDisplay = formatDisplayDate(c.dateGranted);
-			return `#achievement-heading("${escapeTypst(c.level)} (${escapeTypst(c.status)})", "${escapeTypst(dateDisplay)}")[]`;
+			return `#achievement-heading("${typstString(c.level)} (${typstString(c.status)})", "${typstString(dateDisplay)}")[]`;
 		})
 		.join('\n\n');
 
@@ -198,14 +220,16 @@ export function generateTypstCode(data: ResumeData): string {
 		.filter((section) => section.trim() !== '')
 		.join('\n\n');
 
-	return `#let head-color = rgb("${colors.headColor}")
-#let text-color = rgb("${colors.textColor}")
-#let acct-color = rgb("${colors.accentColor}")
-#let link-color = rgb("${colors.linkColor}")
-#let font-size = ${fonts.baseSize}pt
-#let personal-info-font-size = ${fonts.contactSize}pt
-#let heading-size = ${fonts.headingSize}pt
-#let title-size = ${fonts.nameSize}pt
+	const defaults = defaultResumeData.colors;
+
+	return `#let head-color = rgb("${typstColor(colors.headColor, defaults.headColor)}")
+#let text-color = rgb("${typstColor(colors.textColor, defaults.textColor)}")
+#let acct-color = rgb("${typstColor(colors.accentColor, defaults.accentColor)}")
+#let link-color = rgb("${typstColor(colors.linkColor, defaults.linkColor)}")
+#let font-size = ${fontSize(fonts, 'baseSize')}pt
+#let personal-info-font-size = ${fontSize(fonts, 'contactSize')}pt
+#let heading-size = ${fontSize(fonts, 'headingSize')}pt
+#let title-size = ${fontSize(fonts, 'nameSize')}pt
 
 #let bold(body) = {
   text(weight: 700)[#body]
@@ -444,12 +468,12 @@ export function generateTypstCode(data: ResumeData): string {
 // ========== RESUME CONTENT ==========
 
 #show: resume.with(
-  author-name: "${escapeTypst(personalInfo.name)}",
-  email: "${escapeTypst(personalInfo.email)}",
-  phone: "${escapeTypst(personalInfo.phone)}",
-  website: "${escapeTypst(personalInfo.website)}",
-  linkedin-user-id: "${escapeTypst(personalInfo.linkedin)}",
-  github-username: "${escapeTypst(personalInfo.github)}",
+  author-name: "${typstString(personalInfo.name)}",
+  email: "${typstString(personalInfo.email)}",
+  phone: "${typstString(personalInfo.phone)}",
+  website: "${typstString(personalInfo.website)}",
+  linkedin-user-id: "${typstString(personalInfo.linkedin)}",
+  github-username: "${typstString(personalInfo.github)}",
 )
 
 ${orderedSections}
