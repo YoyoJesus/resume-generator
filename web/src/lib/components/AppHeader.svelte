@@ -6,6 +6,7 @@
 		isOverOnePage,
 		onDownload,
 		onUpload,
+		onTailor,
 	}: {
 		showCode: boolean;
 		isCompiling: boolean;
@@ -13,6 +14,7 @@
 		isOverOnePage: boolean;
 		onDownload: () => void;
 		onUpload: () => void;
+		onTailor: () => void;
 	} = $props();
 </script>
 
@@ -22,6 +24,7 @@
 			<h1 class="text-2xl font-bold text-gray-900">Resume Builder</h1>
 			<div class="flex gap-2">
 				<button class="secondary" onclick={onUpload}>Upload your Resume</button>
+				<button class="secondary" onclick={onTailor}>Tailor to a Job</button>
 				<button class="secondary" onclick={() => (showCode = !showCode)}>
 					{showCode ? 'Preview' : 'Typst'}
 				</button>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resumeStore } from '$lib/store';
+	import { onetStore } from '$lib/onet-store';
 	import { generateTypstCode } from '$lib/typst-generator';
 	import { initCompiler, compileToPdf, compileToSvg, downloadPdf } from '$lib/pdf-compiler';
 	import type { ResumeData } from '$lib/types';
@@ -9,6 +10,7 @@
 
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import UploadModal from '$lib/components/UploadModal.svelte';
+	import OnetDrawer from '$lib/components/OnetDrawer.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import TabBar from '$lib/components/TabBar.svelte';
 	import PreviewPanel from '$lib/components/PreviewPanel.svelte';
@@ -34,6 +36,7 @@
 	let svgPreview = $state<string>('');
 	let isPreviewLoading = $state(false);
 	let uploadOpen = $state(false);
+	let tailorOpen = $state(false);
 	let showReviewBanner = $state(false);
 	let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 	let isOverOnePage = $derived(estimateOverOnePage(data));
@@ -58,6 +61,7 @@
 
 	onMount(() => {
 		resumeStore.loadFromStorage();
+		onetStore.loadFromStorage();
 		const unsub = resumeStore.subscribe((val) => {
 			data = val;
 		});
@@ -110,7 +114,10 @@
 		{isOverOnePage}
 		onDownload={downloadPdfFile}
 		onUpload={() => (uploadOpen = true)}
+		onTailor={() => (tailorOpen = true)}
 	/>
+
+	<OnetDrawer bind:open={tailorOpen} bind:data onInserted={() => (showReviewBanner = true)} />
 
 	<main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -120,7 +127,10 @@
 					<div
 						class="mb-4 flex items-start justify-between gap-2 rounded border border-purple-300 bg-purple-50 px-3 py-2 text-sm text-purple-800"
 					>
-						<span>AI filled the highlighted (purple) fields — please review them for accuracy.</span>
+						<span
+							>The highlighted (purple) fields were filled in for you, by AI extraction or from O*NET — please review
+							them for accuracy.</span
+						>
 						<button
 							class="secondary text-xs px-2 py-0.5"
 							onclick={() => (showReviewBanner = false)}
