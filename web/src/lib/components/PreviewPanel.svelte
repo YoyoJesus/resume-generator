@@ -16,7 +16,9 @@
 	}
 </script>
 
-<div class="bg-gray-500 rounded-lg shadow p-4 flex flex-col items-center overflow-auto max-h-[calc(100vh-10rem)]">
+<div
+	class="bg-gray-500 rounded-lg shadow p-4 flex flex-col items-center overflow-auto max-h-[calc(100vh-10rem)] lg:max-h-none lg:h-full"
+>
 	<h2 class="text-lg font-semibold mb-4 text-white">
 		{showCode ? 'Typst Code' : 'Resume Preview (8.5" x 11")'}
 	</h2>

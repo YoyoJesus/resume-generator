@@ -106,7 +106,13 @@
 	];
 </script>
 
-<div class="min-h-screen bg-gray-100 flex flex-col">
+<!--
+	Locked to the viewport from lg up so the page itself never scrolls: main takes
+	the leftover space and the two panels scroll inside it, which means header and
+	footer heights no longer have to be guessed at. Below lg the panels stack, so
+	the page scrolls normally there.
+-->
+<div class="min-h-screen lg:h-screen lg:overflow-hidden bg-gray-100 flex flex-col">
 	<AppHeader
 		bind:showCode
 		{isCompiling}
@@ -119,10 +125,10 @@
 
 	<OnetDrawer bind:open={tailorOpen} bind:data onInserted={() => (showReviewBanner = true)} />
 
-	<main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+	<main class="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 lg:flex-1 lg:min-h-0">
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-full lg:min-h-0">
 			<!-- Form Panel -->
-			<div class="bg-white rounded-lg shadow p-6 overflow-auto max-h-[calc(100vh-10rem)]">
+			<div class="bg-white rounded-lg shadow p-6 overflow-auto max-h-[calc(100vh-10rem)] lg:max-h-none lg:h-full">
 				{#if showReviewBanner}
 					<div
 						class="mb-4 flex items-start justify-between gap-2 rounded border border-purple-300 bg-purple-50 px-3 py-2 text-sm text-purple-800"
