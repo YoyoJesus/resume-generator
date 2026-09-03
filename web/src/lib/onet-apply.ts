@@ -16,6 +16,15 @@ export function applyTailorEdits(
 	let removed = 0;
 
 	for (const edit of edits) {
+		if (edit.kind === 'set_font') {
+			const key = edit.targetId as keyof ResumeData['fonts'];
+			if (!(key in next.fonts)) continue;
+			const value = Number(edit.text);
+			if (!Number.isFinite(value) || value === next.fonts[key]) continue;
+			next = { ...next, fonts: { ...next.fonts, [key]: value } };
+			paths.push(`fonts.${key}`);
+			continue;
+		}
 		if (edit.kind === 'rewrite_field') {
 			if (edit.targetId === 'profile') {
 				if (edit.text === next.profile.summary) continue;
