@@ -2,6 +2,12 @@
 	Single row so the footer stays short enough for the viewport-locked layout in
 	+page.svelte. The O*NET badge and credit line are required attribution using
 	the official markup: do not reword the text or restyle the badge.
+
+	The badge is served from static/ rather than hotlinked from onetcenter.org.
+	vercel.json sets Cross-Origin-Embedder-Policy: require-corp (the Typst WASM
+	compiler needs SharedArrayBuffer), and under require-corp a cross-origin
+	subresource must send Cross-Origin-Resource-Policy. O*NET's server does not,
+	so the hotlinked badge is blocked in production while working fine in dev.
 -->
 <footer class="bg-white border-t border-gray-200 mt-auto">
 	<div
@@ -16,7 +22,7 @@
 				class="shrink-0"
 			>
 				<img
-					src="https://www.onetcenter.org/image/link/onet-in-it.svg"
+					src="/onet-in-it.svg"
 					alt="O*NET in-it"
 					width="130"
 					height="60"
