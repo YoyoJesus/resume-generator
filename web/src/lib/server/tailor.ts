@@ -96,7 +96,7 @@ export function buildTailorInput(
 			.join(', ')}`,
 		'',
 		isOverOnePage
-			? '=== LENGTH MODE ===\nThis resume is estimated to exceed one page. Do not add content unless it replaces more text. Prioritize concise rewrite_bullet edits and remove_bullet edits for generic, repetitive, or least relevant bullets until the resume is tighter.'
+			? '=== LENGTH MODE ===\nThe output must fit on exactly one side of one A4 page. This resume is estimated to exceed one page. Do not add content unless it replaces more text. Prioritize concise rewrites, removals, and font-size reductions for generic, repetitive, or least relevant content until it fits.'
 			: '=== LENGTH MODE ===\nThis resume is within the one-page target. Make concrete, grounded improvements; use add_bullet only when it adds job-relevant evidence not already stated.',
 		'',
 		'=== TARGETS: all resume entries (bullet kinds) ===',
