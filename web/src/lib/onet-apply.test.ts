@@ -24,8 +24,13 @@ function seed(): ResumeData {
 	};
 }
 
-const bullet = (targetId: string, text: string): TailorEdit => ({ kind: 'bullet', targetId, text });
-const skill = (targetId: string, text: string): TailorEdit => ({ kind: 'skill', targetId, text });
+const bullet = (targetId: string, text: string): TailorEdit => ({
+	kind: 'add_bullet',
+	targetId,
+	text,
+	bulletIndex: -1,
+});
+const skill = (targetId: string, text: string): TailorEdit => ({ kind: 'skill', targetId, text, bulletIndex: -1 });
 
 describe('applyTailorEdits', () => {
 	it('appends a bullet to the named experience entry', () => {
@@ -81,6 +86,24 @@ describe('applyTailorEdits', () => {
 
 		expect(data.workExperience[0].bullets).toEqual(['Built an API.']);
 		expect(paths).toEqual([]);
+	});
+
+	it('rewrites an existing bullet in place', () => {
+		const { data, paths } = applyTailorEdits(seed(), [
+			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 0, text: 'Built and shipped a production API.' },
+		]);
+
+		expect(data.workExperience[0].bullets).toEqual(['Built and shipped a production API.']);
+		expect(paths).toEqual(['workExperience.0.bullets.0']);
+	});
+
+	it('removes a least-relevant bullet when shortening a resume', () => {
+		const { data, removed } = applyTailorEdits(seed(), [
+			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: '' },
+		]);
+
+		expect(data.workExperience[0].bullets).toEqual([]);
+		expect(removed).toBe(1);
 	});
 
 	it('leaves the resume untouched when there is nothing to apply', () => {

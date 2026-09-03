@@ -1,6 +1,7 @@
 import type { ResumeData } from '$lib/types';
 import type { OnetOccupation, TailorEdit } from '$lib/onet-types';
 import { bulletTargets, skillTargets } from '$lib/onet-insert';
+import { estimateOverOnePage } from '$lib/resume-utils';
 
 // A ceiling on how much one click can change, so a runaway response can't
 // rewrite the whole resume in a single pass.
@@ -9,22 +10,24 @@ export const MAX_EDITS = 12;
 export interface AllowedTargets {
 	bullets: Set<string>;
 	skills: Set<string>;
+	bulletCounts?: Map<string, number>;
 }
 
 export const TAILOR_PROMPT = [
-	'You help tailor a resume toward a specific occupation using O*NET reference data.',
+	'You actively tailor a resume toward a specific occupation using O*NET reference data.',
 	'You are given the candidate resume and the O*NET data for the target occupation.',
-	"Choose the items most worth adding, rewrite each one in the resume's existing voice and tense, and assign it to a target.",
+	"Choose the strongest relevant changes, rewrite in the resume's existing voice and tense, and assign each to an exact target.",
 	'',
 	'Grounding rules, in order of importance:',
 	'1. Never claim experience the resume does not already evidence. If the resume shows no management, do not add a bullet about leading a team. If it shows no experience with a technology, do not add that technology.',
 	'2. Rewrite; do not paste. Match the phrasing, tense and level of detail of the bullets already in that entry, and lead with a strong verb.',
-	'3. Prefer a small number of strong, well-grounded additions over filling every slot. Returning few edits, or none, is a correct answer when the resume and the occupation do not overlap.',
+	'3. Prefer a small number of strong, well-grounded changes over filling every slot. Returning few edits, or none, is correct only when the resume and the occupation do not overlap.',
 	'4. Do not duplicate something the entry already says in different words.',
 	'',
 	`Return at most ${MAX_EDITS} edits.`,
 	'Every targetId MUST be copied exactly from the target lists below; never invent one.',
-	'Use kind "bullet" with an experience or project id, and kind "skill" with a skill category id.',
+	'Use kind "add_bullet" to add a grounded bullet, "rewrite_bullet" to improve an existing bullet, or "remove_bullet" to remove an existing bullet. Use kind "skill" with a skill category id.',
+	'For rewrite_bullet and remove_bullet, bulletIndex MUST be the zero-based index shown beside that bullet. For add_bullet and skill, bulletIndex MUST be -1.',
 	'A "skill" edit\'s text must be a short skill or technology name, not a sentence.',
 ].join('\n');
 
@@ -41,9 +44,10 @@ export const TAILOR_SCHEMA = {
 				additionalProperties: false,
 				required: ['kind', 'targetId', 'text'],
 				properties: {
-					kind: { type: 'string', enum: ['bullet', 'skill'] },
+					kind: { type: 'string', enum: ['add_bullet', 'rewrite_bullet', 'remove_bullet', 'skill'] },
 					targetId: { type: 'string' },
 					text: { type: 'string' },
+					bulletIndex: { type: 'integer', minimum: -1 },
 				},
 			},
 		},
@@ -64,14 +68,23 @@ export function buildTailorInput(
 	const bullets = bulletTargets(resume);
 	const skills = skillTargets(resume);
 
-	const lines: string[] = [TAILOR_PROMPT, '', '=== TARGETS: experience and project entries (kind "bullet") ==='];
+	const isOverOnePage = estimateOverOnePage(resume);
+	const lines: string[] = [
+		TAILOR_PROMPT,
+		'',
+		isOverOnePage
+			? '=== LENGTH MODE ===\nThis resume is estimated to exceed one page. Do not add content unless it replaces more text. Prioritize concise rewrite_bullet edits and remove_bullet edits for generic, repetitive, or least relevant bullets until the resume is tighter.'
+			: '=== LENGTH MODE ===\nThis resume is within the one-page target. Make concrete, grounded improvements; use add_bullet only when it adds job-relevant evidence not already stated.',
+		'',
+		'=== TARGETS: experience and project entries (bullet kinds) ===',
+	];
 
 	for (const target of bullets) {
 		const entry =
 			resume.workExperience.find((w) => w.id === target.id) ?? resume.projects.find((p) => p.id === target.id);
 		const existing = entry?.bullets.filter(Boolean) ?? [];
 		lines.push(`id=${target.id} | ${target.label}`);
-		lines.push(existing.length ? existing.map((b) => `    - ${b}`).join('\n') : '    (no bullets yet)');
+		lines.push(existing.length ? existing.map((b, index) => `    [${index}] ${b}`).join('\n') : '    (no bullets yet)');
 	}
 
 	lines.push('', '=== TARGETS: skill categories (kind "skill") ===');
@@ -118,7 +131,18 @@ export function buildTailorInput(
 
 	return {
 		prompt: lines.join('\n'),
-		allowed: { bullets: new Set(bullets.map((b) => b.id)), skills: new Set(skills.map((s) => s.id)) },
+		allowed: {
+			bullets: new Set(bullets.map((b) => b.id)),
+			skills: new Set(skills.map((s) => s.id)),
+			bulletCounts: new Map(
+				bullets.map((target) => {
+					const entry =
+						resume.workExperience.find((work) => work.id === target.id) ??
+						resume.projects.find((project) => project.id === target.id);
+					return [target.id, entry?.bullets.length ?? 0];
+				}),
+			),
+		},
 	};
 }
 
@@ -135,21 +159,35 @@ export function validateEdits(raw: unknown, allowed: AllowedTargets): TailorEdit
 	for (const item of list) {
 		if (out.length >= MAX_EDITS) break;
 
-		const { kind, targetId, text } = (item ?? {}) as Record<string, unknown>;
-		if (kind !== 'bullet' && kind !== 'skill') continue;
-		if (typeof targetId !== 'string' || typeof text !== 'string') continue;
+		const { kind, targetId, text, bulletIndex } = (item ?? {}) as Record<string, unknown>;
+		if (kind !== 'add_bullet' && kind !== 'rewrite_bullet' && kind !== 'remove_bullet' && kind !== 'skill') continue;
+		if (
+			typeof targetId !== 'string' ||
+			typeof text !== 'string' ||
+			typeof bulletIndex !== 'number' ||
+			!Number.isInteger(bulletIndex)
+		)
+			continue;
 
 		const trimmed = text.trim();
-		if (!trimmed) continue;
+		if (kind !== 'remove_bullet' && !trimmed) continue;
+		if ((kind === 'add_bullet' || kind === 'skill') && bulletIndex !== -1) continue;
+		if ((kind === 'rewrite_bullet' || kind === 'remove_bullet') && bulletIndex < 0) continue;
 
-		const pool = kind === 'bullet' ? allowed.bullets : allowed.skills;
+		const pool = kind === 'skill' ? allowed.skills : allowed.bullets;
 		if (!pool.has(targetId)) continue;
+		if (
+			(kind === 'rewrite_bullet' || kind === 'remove_bullet') &&
+			allowed.bulletCounts !== undefined &&
+			bulletIndex >= (allowed.bulletCounts.get(targetId) ?? 0)
+		)
+			continue;
 
-		const key = `${kind}:${targetId}:${trimmed.toLowerCase()}`;
+		const key = `${kind}:${targetId}:${bulletIndex}:${trimmed.toLowerCase()}`;
 		if (seen.has(key)) continue;
 		seen.add(key);
 
-		out.push({ kind, targetId, text: trimmed });
+		out.push({ kind, targetId, text: trimmed, bulletIndex });
 	}
 
 	return out;
