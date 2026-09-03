@@ -20,7 +20,7 @@ const MESSAGES: Record<ExtractErrorCode, string> = {
 	invalid_file: 'Unsupported file. Upload a PDF, DOCX, or TXT.',
 	file_too_large: 'File is too large (max 5 MB).',
 	quota_exceeded: 'AI credit limit reached. Please try again later.',
-	rate_limited: 'Too many requests — wait a moment and retry.',
+	rate_limited: 'Too many requests - wait a moment and retry.',
 	auth: 'AI service is misconfigured (API key).',
 	upstream_unavailable: "Can't reach the AI service. Check your connection and retry.",
 	parse_failed: "Couldn't read that file. Try another format.",

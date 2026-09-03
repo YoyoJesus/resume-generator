@@ -1,5 +1,5 @@
 // Types for O*NET Web Services data. Kept separate from types.ts, which models
-// the resume itself — a target occupation is reference data and never renders.
+// the resume itself - a target occupation is reference data and never renders.
 
 export interface OnetOccupationRef {
 	code: string;

@@ -106,7 +106,7 @@
 					onclick={() => fileInput?.click()}
 				>
 					<span class="text-gray-600">Drag a file here, or click to browse</span>
-					<span class="block text-xs text-gray-400 mt-1">PDF, DOCX, or TXT — max 5 MB</span>
+					<span class="block text-xs text-gray-400 mt-1">PDF, DOCX, or TXT - max 5 MB</span>
 				</button>
 				<input bind:this={fileInput} type="file" accept={ACCEPT} class="hidden" onchange={onPick} />
 			{:else if status === 'processing'}
