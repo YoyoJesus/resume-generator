@@ -7,13 +7,13 @@ import type { OnetOccupation } from '$lib/onet-types';
 const allowed = { bullets: new Set(['w1', 'p1']), skills: new Set(['s1']) };
 
 function edit(over: Record<string, unknown> = {}) {
-	return { kind: 'bullet', targetId: 'w1', text: 'Shipped a thing.', ...over };
+	return { kind: 'add_bullet', targetId: 'w1', text: 'Shipped a thing.', bulletIndex: -1, ...over };
 }
 
 describe('validateEdits', () => {
 	it('keeps a well-formed edit', () => {
 		expect(validateEdits({ edits: [edit()] }, allowed)).toEqual([
-			{ kind: 'bullet', targetId: 'w1', text: 'Shipped a thing.' },
+			{ kind: 'add_bullet', targetId: 'w1', text: 'Shipped a thing.', bulletIndex: -1 },
 		]);
 	});
 
@@ -24,7 +24,7 @@ describe('validateEdits', () => {
 	});
 
 	it('drops a bullet edit aimed at a skill category id', () => {
-		expect(validateEdits({ edits: [edit({ kind: 'bullet', targetId: 's1' })] }, allowed)).toEqual([]);
+		expect(validateEdits({ edits: [edit({ kind: 'add_bullet', targetId: 's1' })] }, allowed)).toEqual([]);
 	});
 
 	it('drops a skill edit aimed at an experience id', () => {
@@ -67,7 +67,9 @@ describe('validateEdits', () => {
 
 	it('keeps good edits alongside bad ones rather than failing the batch', () => {
 		const raw = { edits: [edit({ targetId: 'ghost' }), edit({ text: 'Real bullet.' })] };
-		expect(validateEdits(raw, allowed)).toEqual([{ kind: 'bullet', targetId: 'w1', text: 'Real bullet.' }]);
+		expect(validateEdits(raw, allowed)).toEqual([
+			{ kind: 'add_bullet', targetId: 'w1', text: 'Real bullet.', bulletIndex: -1 },
+		]);
 	});
 });
 

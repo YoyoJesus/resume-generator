@@ -159,15 +159,21 @@
 			const result = applyTailorEdits(data, edits);
 			data = result.data;
 			applyPaths(result.paths);
+			if (result.removed > 0 && result.paths.length === 0) onInserted();
 
-			if (result.paths.length === 0) {
+			const changes = result.paths.length + result.removed;
+			if (changes === 0) {
 				tailorNote =
 					edits.length === 0
 						? "The AI didn't find anything in this occupation your resume can already back up."
 						: 'Everything the AI suggested is already on your resume.';
 			} else {
-				const n = result.paths.length;
-				tailorNote = `Added ${n} ${n === 1 ? 'item' : 'items'}, highlighted in purple. Check the wording before exporting.`;
+				const revised = result.paths.length;
+				const parts = [
+					revised ? `${revised} ${revised === 1 ? 'item added or rewritten' : 'items added or rewritten'}` : '',
+					result.removed ? `${result.removed} ${result.removed === 1 ? 'bullet removed' : 'bullets removed'}` : '',
+				].filter(Boolean);
+				tailorNote = `${parts.join(', ')}. Rewritten and added text is highlighted in purple; review every change before exporting.`;
 			}
 		} catch {
 			tailorError = GENERIC_ERROR;
@@ -295,8 +301,9 @@
 						{tailoring ? 'Tailoring...' : 'Auto-tailor with AI'}
 					</button>
 					<p class="mt-1 text-xs text-gray-500">
-						Picks the items that fit your background, rewrites them in your voice, and adds them straight in. Review the
-						purple text before you export &mdash; AI can overstate what you have actually done.
+						Picks grounded improvements and applies them straight in. If your resume is over one page, it tightens
+						existing bullets instead of adding more. Review every change before you export &mdash; AI can overstate what
+						you have done.
 					</p>
 					{#if tailorNote}
 						<p class="mt-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">{tailorNote}</p>
