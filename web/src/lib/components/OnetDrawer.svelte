@@ -224,8 +224,8 @@
 					<p class="mt-3 text-sm text-gray-500">No occupations matched that search.</p>
 				{:else}
 					<p class="mt-3 text-sm text-gray-500">
-						Pick the job you're applying for and its O*NET tasks, technologies, and competencies show up here. Insert
-						any of them straight into your resume.
+						Pick the job you're applying for and its O*NET tasks, technologies, and competencies show up here. Each one
+						gets a <span class="font-medium">+ Add</span> button that copies its wording into a part of your resume you choose.
 					</p>
 				{/if}
 			{:else}
@@ -236,6 +236,11 @@
 					</div>
 					<p class="mt-1 text-xs text-gray-500">{occupation.code}</p>
 					<p class="mt-2 text-sm text-gray-600">{occupation.description}</p>
+					<p class="mt-3 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+						Nothing here changes your resume on its own. Use <span class="font-medium">+ Add</span> on any item to copy its
+						wording in, and you pick which experience, project, or skill category it lands in. Anything you add is highlighted
+						purple so you can reword it.
+					</p>
 				</div>
 
 				{#each SECTION_ORDER as name (name)}
@@ -263,13 +268,15 @@
 												<button
 													class="secondary shrink-0 px-2 py-0.5 text-xs"
 													onclick={() => toggleMenu(key)}
-													aria-label="Insert into resume">+</button
+													aria-label="Add this to your resume"
+													title="Add this to your resume">+ Add</button
 												>
 											</div>
 											{#if menuFor === key}
 												<OnetInsertMenu
+													heading="Add as a bullet point to:"
 													targets={bulletDests}
-													emptyMessage="Add an experience or project first."
+													emptyMessage="Add an experience or project on the Experience or Projects tab first, then come back."
 													onPick={(id) => {
 														const target = bulletDests.find((t) => t.id === id)!;
 														insertBullet(target.kind, id, item.text);
@@ -297,11 +304,13 @@
 															<button
 																class="secondary shrink-0 px-2 py-0.5 text-xs"
 																onclick={() => toggleMenu(key)}
-																aria-label="Insert into resume">+</button
+																aria-label="Add this to your resume"
+																title="Add this to your resume">+ Add</button
 															>
 														</div>
 														{#if menuFor === key}
 															<OnetInsertMenu
+																heading="Add to skill category:"
 																targets={skillDests}
 																allowNew
 																onPick={(id) => insertSkill(id, example.name)}
@@ -325,11 +334,13 @@
 												<button
 													class="secondary shrink-0 px-2 py-0.5 text-xs"
 													onclick={() => toggleMenu(key)}
-													aria-label="Insert into resume">+</button
+													aria-label="Add this to your resume"
+													title="Add this to your resume">+ Add</button
 												>
 											</div>
 											{#if menuFor === key}
 												<OnetInsertMenu
+													heading="Add to skill category:"
 													targets={skillDests}
 													allowNew
 													onPick={(id) => insertSkill(id, element.name)}

@@ -2,6 +2,7 @@
 	// Expands inline beneath the item being inserted. Inline rather than a floating
 	// popover so it can't be clipped by the drawer's scroll container.
 	let {
+		heading,
 		targets,
 		allowNew = false,
 		newPlaceholder = 'New category name',
@@ -9,6 +10,8 @@
 		onPick,
 		onCreate,
 	}: {
+		// Says what the pick will actually do, e.g. "Add as a bullet point to:".
+		heading: string;
 		targets: { id: string; label: string }[];
 		allowNew?: boolean;
 		newPlaceholder?: string;
@@ -28,7 +31,7 @@
 </script>
 
 <div class="mt-2 rounded border border-gray-300 bg-gray-50 p-2 space-y-1">
-	<p class="text-xs font-medium text-gray-600 px-1">Insert into</p>
+	<p class="text-xs font-medium text-gray-600 px-1">{heading}</p>
 
 	{#each targets as target (target.id)}
 		<button
