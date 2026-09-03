@@ -10,6 +10,7 @@ export const MAX_EDITS = 12;
 export interface AllowedTargets {
 	bullets: Set<string>;
 	skills: Set<string>;
+	fields?: Set<string>;
 	bulletCounts?: Map<string, number>;
 }
 
@@ -26,7 +27,7 @@ export const TAILOR_PROMPT = [
 	'',
 	`Return at most ${MAX_EDITS} edits.`,
 	'Every targetId MUST be copied exactly from the target lists below; never invent one.',
-	'Use kind "add_bullet" to add a grounded bullet, "rewrite_bullet" to improve an existing bullet, or "remove_bullet" to remove an existing bullet. Use kind "skill" with a skill category id.',
+	'Use kind "add_bullet" to add a grounded bullet, "rewrite_bullet" to improve an existing bullet, "remove_bullet" to remove an existing bullet, "rewrite_field" to tailor an explicitly listed profile, project, education, leadership, or achievement field, or "skill" with a skill category id.',
 	'For rewrite_bullet and remove_bullet, bulletIndex MUST be the zero-based index shown beside that bullet. For add_bullet and skill, bulletIndex MUST be -1.',
 	'A "skill" edit\'s text must be a short skill or technology name, not a sentence.',
 ].join('\n');
@@ -44,7 +45,7 @@ export const TAILOR_SCHEMA = {
 				additionalProperties: false,
 				required: ['kind', 'targetId', 'text', 'bulletIndex'],
 				properties: {
-					kind: { type: 'string', enum: ['add_bullet', 'rewrite_bullet', 'remove_bullet', 'skill'] },
+					kind: { type: 'string', enum: ['add_bullet', 'rewrite_bullet', 'remove_bullet', 'rewrite_field', 'skill'] },
 					targetId: { type: 'string' },
 					text: { type: 'string' },
 					bulletIndex: { type: 'integer', minimum: -1 },
@@ -65,8 +66,21 @@ export function buildTailorInput(
 	resume: ResumeData,
 	occupation: OnetOccupation,
 ): { prompt: string; allowed: AllowedTargets } {
-	const bullets = bulletTargets(resume);
+	const bullets = [
+		...bulletTargets(resume),
+		...resume.education.map((e) => ({
+			id: e.id,
+			kind: 'education' as const,
+			label: `${e.degree} at ${e.institution}`,
+		})),
+		...resume.leadership.map((e) => ({
+			id: e.id,
+			kind: 'leadership' as const,
+			label: `${e.title} at ${e.organization}`,
+		})),
+	];
 	const skills = skillTargets(resume);
+	const fields = resume.profile.summary.trim() ? ['profile'] : [];
 
 	const isOverOnePage = estimateOverOnePage(resume);
 	const lines: string[] = [
@@ -76,12 +90,15 @@ export function buildTailorInput(
 			? '=== LENGTH MODE ===\nThis resume is estimated to exceed one page. Do not add content unless it replaces more text. Prioritize concise rewrite_bullet edits and remove_bullet edits for generic, repetitive, or least relevant bullets until the resume is tighter.'
 			: '=== LENGTH MODE ===\nThis resume is within the one-page target. Make concrete, grounded improvements; use add_bullet only when it adds job-relevant evidence not already stated.',
 		'',
-		'=== TARGETS: experience and project entries (bullet kinds) ===',
+		'=== TARGETS: all resume entries (bullet kinds) ===',
 	];
 
 	for (const target of bullets) {
 		const entry =
-			resume.workExperience.find((w) => w.id === target.id) ?? resume.projects.find((p) => p.id === target.id);
+			resume.workExperience.find((w) => w.id === target.id) ??
+			resume.projects.find((p) => p.id === target.id) ??
+			resume.education.find((e) => e.id === target.id) ??
+			resume.leadership.find((e) => e.id === target.id);
 		const existing = entry?.bullets.filter(Boolean) ?? [];
 		lines.push(`id=${target.id} | ${target.label}`);
 		lines.push(existing.length ? existing.map((b, index) => `    [${index}] ${b}`).join('\n') : '    (no bullets yet)');
@@ -94,7 +111,31 @@ export function buildTailorInput(
 	}
 
 	if (resume.profile.summary.trim()) {
-		lines.push('', '=== Candidate profile summary ===', resume.profile.summary.trim());
+		lines.push('', '=== Editable profile summary ===', 'id=profile', resume.profile.summary.trim());
+	}
+	for (const project of resume.projects) {
+		if (project.stack.trim()) {
+			fields.push(`project-stack:${project.id}`);
+			lines.push(
+				'',
+				`=== Editable project field ===`,
+				`id=project-stack:${project.id}`,
+				`Project: ${project.name}`,
+				`Stack: ${project.stack}`,
+			);
+		}
+	}
+	for (const achievement of resume.achievements) {
+		if (achievement.description.trim()) {
+			fields.push(`achievement-description:${achievement.id}`);
+			lines.push(
+				'',
+				`=== Editable achievement field ===`,
+				`id=achievement-description:${achievement.id}`,
+				`${achievement.title} (${achievement.date})`,
+				achievement.description,
+			);
+		}
 	}
 	if (resume.education.length) {
 		lines.push(
@@ -134,11 +175,14 @@ export function buildTailorInput(
 		allowed: {
 			bullets: new Set(bullets.map((b) => b.id)),
 			skills: new Set(skills.map((s) => s.id)),
+			fields: new Set(fields),
 			bulletCounts: new Map(
 				bullets.map((target) => {
 					const entry =
 						resume.workExperience.find((work) => work.id === target.id) ??
-						resume.projects.find((project) => project.id === target.id);
+						resume.projects.find((project) => project.id === target.id) ??
+						resume.education.find((education) => education.id === target.id) ??
+						resume.leadership.find((leadership) => leadership.id === target.id);
 					return [target.id, entry?.bullets.length ?? 0];
 				}),
 			),
@@ -160,7 +204,14 @@ export function validateEdits(raw: unknown, allowed: AllowedTargets): TailorEdit
 		if (out.length >= MAX_EDITS) break;
 
 		const { kind, targetId, text, bulletIndex } = (item ?? {}) as Record<string, unknown>;
-		if (kind !== 'add_bullet' && kind !== 'rewrite_bullet' && kind !== 'remove_bullet' && kind !== 'skill') continue;
+		if (
+			kind !== 'add_bullet' &&
+			kind !== 'rewrite_bullet' &&
+			kind !== 'remove_bullet' &&
+			kind !== 'rewrite_field' &&
+			kind !== 'skill'
+		)
+			continue;
 		if (
 			typeof targetId !== 'string' ||
 			typeof text !== 'string' ||
@@ -171,11 +222,15 @@ export function validateEdits(raw: unknown, allowed: AllowedTargets): TailorEdit
 
 		const trimmed = text.trim();
 		if (kind !== 'remove_bullet' && !trimmed) continue;
-		if ((kind === 'add_bullet' || kind === 'skill') && bulletIndex !== -1) continue;
+		if ((kind === 'add_bullet' || kind === 'skill' || kind === 'rewrite_field') && bulletIndex !== -1) continue;
 		if ((kind === 'rewrite_bullet' || kind === 'remove_bullet') && bulletIndex < 0) continue;
 
-		const pool = kind === 'skill' ? allowed.skills : allowed.bullets;
-		if (!pool.has(targetId)) continue;
+		if (kind === 'rewrite_field') {
+			if (!allowed.fields?.has(targetId)) continue;
+		} else {
+			const pool = kind === 'skill' ? allowed.skills : allowed.bullets;
+			if (!pool.has(targetId)) continue;
+		}
 		if (
 			(kind === 'rewrite_bullet' || kind === 'remove_bullet') &&
 			allowed.bulletCounts !== undefined &&

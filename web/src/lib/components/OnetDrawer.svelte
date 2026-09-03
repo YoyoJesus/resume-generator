@@ -301,9 +301,9 @@
 						{tailoring ? 'Tailoring...' : 'Auto-tailor with AI'}
 					</button>
 					<p class="mt-1 text-xs text-gray-500">
-						Picks grounded improvements and applies them straight in. If your resume is over one page, it tightens
-						existing bullets instead of adding more. Review every change before you export &mdash; AI can overstate what
-						you have done.
+						Picks grounded improvements across your profile, projects, experience, education, leadership, skills, and
+						achievements. If your resume is over one page, it tightens existing content instead of adding more. Review
+						every change before you export &mdash; AI can overstate what you have done.
 					</p>
 					{#if tailorNote}
 						<p class="mt-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">{tailorNote}</p>
