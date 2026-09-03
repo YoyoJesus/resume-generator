@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateEdits, MAX_EDITS, buildTailorInput } from './tailor';
+import { validateEdits, MAX_EDITS, buildTailorInput, TAILOR_SCHEMA } from './tailor';
 import { defaultResumeData } from '$lib/types';
 import type { ResumeData } from '$lib/types';
 import type { OnetOccupation } from '$lib/onet-types';
@@ -11,6 +11,10 @@ function edit(over: Record<string, unknown> = {}) {
 }
 
 describe('validateEdits', () => {
+	it('requires every declared edit property for strict OpenAI JSON schema compatibility', () => {
+		expect(TAILOR_SCHEMA.properties.edits.items.required).toEqual(['kind', 'targetId', 'text', 'bulletIndex']);
+	});
+
 	it('keeps a well-formed edit', () => {
 		expect(validateEdits({ edits: [edit()] }, allowed)).toEqual([
 			{ kind: 'add_bullet', targetId: 'w1', text: 'Shipped a thing.', bulletIndex: -1 },
