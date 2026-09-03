@@ -1,5 +1,5 @@
 // Types for O*NET Web Services data. Kept separate from types.ts, which models
-// the resume itself — a target occupation is reference data and never renders.
+// the resume itself - a target occupation is reference data and never renders.
 
 export interface OnetOccupationRef {
 	code: string;
@@ -63,7 +63,7 @@ export const onetSectionLabels: Record<OnetSectionName, string> = {
 // bulletIndex identifies an existing bullet for rewrite/remove; it is -1 for
 // additions and skills.
 export interface TailorEdit {
-	kind: 'add_bullet' | 'rewrite_bullet' | 'remove_bullet' | 'rewrite_field' | 'skill';
+	kind: 'add_bullet' | 'rewrite_bullet' | 'remove_bullet' | 'rewrite_field' | 'set_font' | 'skill';
 	targetId: string;
 	text: string;
 	bulletIndex: number;

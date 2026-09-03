@@ -417,7 +417,7 @@ export function generateTypstCode(data: ResumeData): string {
     ]
   }
   if award != "" {
-    [ · #award]
+    [- #award]
   }
   v(-0.2em)
   if body != [] {

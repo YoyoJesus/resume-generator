@@ -106,6 +106,15 @@ describe('applyTailorEdits', () => {
 		expect(removed).toBe(1);
 	});
 
+	it('applies a validated font size adjustment', () => {
+		const { data, paths } = applyTailorEdits(seed(), [
+			{ kind: 'set_font', targetId: 'baseSize', bulletIndex: -1, text: '8.1' },
+		]);
+
+		expect(data.fonts.baseSize).toBe(8.1);
+		expect(paths).toContain('fonts.baseSize');
+	});
+
 	it('leaves the resume untouched when there is nothing to apply', () => {
 		const before = seed();
 		const { data, paths } = applyTailorEdits(before, []);
