@@ -11,9 +11,22 @@ O*NET publishes exactly that reference data for roughly 900 occupations. This fe
 
 ## Scope
 
-A read-only reference drawer plus explicit insert actions. No AI. The existing OpenAI extraction pipeline is untouched.
+A reference drawer plus explicit insert actions, and an optional one-click AI pass.
 
-Out of scope: gap analysis against the current resume, AI rewriting of bullets, occupation recommendations.
+The drawer itself is deterministic: browsing it changes nothing, and every manual insert copies O*NET's wording verbatim into a destination the user picks.
+
+Out of scope: gap analysis against the current resume, occupation recommendations.
+
+### Added after the first release: Auto-tailor
+
+A button that sends the resume plus the occupation code to OpenAI, which selects the items the resume can already support, rewrites each in the resume's voice, and assigns it to a target. Results apply immediately, highlighted purple for review.
+
+Two risks this design has to absorb:
+
+- **Overstated experience.** Rewriting an O*NET task into a resume bullet can assert something the candidate has never done. The prompt's first grounding rule forbids claims the resume does not already evidence, the button's helper text warns about it, and every applied edit is highlighted for review. This mitigates but does not eliminate the risk; the user must read the purple text.
+- **Hallucinated destinations.** The model can return a `targetId` it was never offered. `validateEdits` drops any edit whose id is not in the exact allowed set for its kind, along with wrong-kind ids, empty text, duplicates, and anything past `MAX_EDITS`. Bad entries are dropped individually so one does not lose the rest of the batch.
+
+`POST /api/onet/tailor` takes `{ resume, code }` and is explicitly uncached, unlike the other O*NET routes, because its response is personal to the caller. It fetches the occupation server-side rather than trusting a client-supplied copy. Contact details are excluded from the prompt.
 
 ## Data source
 

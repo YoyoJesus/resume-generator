@@ -2,9 +2,10 @@
 	import { fly, fade } from 'svelte/transition';
 	import { onetStore } from '$lib/onet-store';
 	import { onetSectionLabels } from '$lib/onet-types';
-	import type { OnetOccupation, OnetOccupationRef, OnetSectionName } from '$lib/onet-types';
+	import type { OnetOccupation, OnetOccupationRef, OnetSectionName, TailorEdit } from '$lib/onet-types';
 	import type { ResumeData } from '$lib/types';
 	import { appendBullet, appendSkill, appendSkillToNewCategory, bulletTargets, skillTargets } from '$lib/onet-insert';
+	import { applyTailorEdits } from '$lib/onet-apply';
 	import { aiFilled } from '$lib/ai-highlight';
 	import OnetInsertMenu from './OnetInsertMenu.svelte';
 
@@ -24,6 +25,9 @@
 	let expanded = $state<OnetSectionName | null>('tasks');
 	// Key of the item whose insert menu is showing, e.g. "tasks:1234".
 	let menuFor = $state<string | null>(null);
+	let tailoring = $state(false);
+	let tailorError = $state('');
+	let tailorNote = $state('');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const GENERIC_ERROR = "Can't reach O*NET. Check your connection and retry.";
@@ -94,6 +98,8 @@
 	function changeOccupation() {
 		occupation = null;
 		error = '';
+		tailorError = '';
+		tailorNote = '';
 		onetStore.clear();
 		onetStore.saveToStorage();
 	}
@@ -129,6 +135,45 @@
 		const result = appendSkillToNewCategory(data, category, name);
 		data = result.data;
 		applyPaths(result.paths);
+	}
+
+	// One click sends the resume plus the occupation code to the AI pass and
+	// applies whatever comes back, highlighted for review.
+	async function autoTailor() {
+		if (!occupation || tailoring) return;
+		tailoring = true;
+		tailorError = '';
+		tailorNote = '';
+		try {
+			const res = await fetch('/api/onet/tailor', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ resume: data, code: occupation.code }),
+			});
+			if (!res.ok) {
+				tailorError = await readError(res);
+				return;
+			}
+
+			const edits: TailorEdit[] = (await res.json()).edits ?? [];
+			const result = applyTailorEdits(data, edits);
+			data = result.data;
+			applyPaths(result.paths);
+
+			if (result.paths.length === 0) {
+				tailorNote =
+					edits.length === 0
+						? "The AI didn't find anything in this occupation your resume can already back up."
+						: 'Everything the AI suggested is already on your resume.';
+			} else {
+				const n = result.paths.length;
+				tailorNote = `Added ${n} ${n === 1 ? 'item' : 'items'}, highlighted in purple. Check the wording before exporting.`;
+			}
+		} catch {
+			tailorError = GENERIC_ERROR;
+		} finally {
+			tailoring = false;
+		}
 	}
 
 	function toggleMenu(key: string) {
@@ -241,6 +286,24 @@
 						wording in, and you pick which experience, project, or skill category it lands in. Anything you add is highlighted
 						purple so you can reword it.
 					</p>
+
+					<button
+						class="primary mt-3 w-full text-sm disabled:opacity-60"
+						onclick={autoTailor}
+						disabled={tailoring || bulletDests.length + skillDests.length === 0}
+					>
+						{tailoring ? 'Tailoring...' : 'Auto-tailor with AI'}
+					</button>
+					<p class="mt-1 text-xs text-gray-500">
+						Picks the items that fit your background, rewrites them in your voice, and adds them straight in. Review the
+						purple text before you export &mdash; AI can overstate what you have actually done.
+					</p>
+					{#if tailorNote}
+						<p class="mt-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">{tailorNote}</p>
+					{/if}
+					{#if tailorError}
+						<p class="mt-2 rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">{tailorError}</p>
+					{/if}
 				</div>
 
 				{#each SECTION_ORDER as name (name)}

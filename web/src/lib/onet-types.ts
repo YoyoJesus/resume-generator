@@ -57,3 +57,11 @@ export const onetSectionLabels: Record<OnetSectionName, string> = {
 	knowledge: 'Knowledge',
 	abilities: 'Abilities',
 };
+
+// One change proposed by the AI tailor pass. `targetId` is the id of a work
+// experience / project entry (kind 'bullet') or a skill category (kind 'skill').
+export interface TailorEdit {
+	kind: 'bullet' | 'skill';
+	targetId: string;
+	text: string;
+}
