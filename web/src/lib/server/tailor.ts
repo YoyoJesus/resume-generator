@@ -42,7 +42,7 @@ export const TAILOR_SCHEMA = {
 			items: {
 				type: 'object',
 				additionalProperties: false,
-				required: ['kind', 'targetId', 'text'],
+				required: ['kind', 'targetId', 'text', 'bulletIndex'],
 				properties: {
 					kind: { type: 'string', enum: ['add_bullet', 'rewrite_bullet', 'remove_bullet', 'skill'] },
 					targetId: { type: 'string' },
