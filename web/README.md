@@ -60,4 +60,15 @@ route accepts DOCX files up to 5 MB, uses no persistent application storage, req
 seconds for Vercel Hobby compatibility. Conversion preserves supported layout and style intent; images and Word-only
 effects may be approximated or omitted.
 
+## AI resume upload gate
+
+Resume files are preflighted in the browser before an AI request is allowed. TXT and DOCX files use local text
+extraction. PDFs use PDF.js text extraction first, with Tesseract.js OCR only for pages that do not contain enough usable
+text. The gate displays a text preview, word/page counts, extraction method, text-quality score, and OCR confidence when
+applicable. Unreadable files are blocked; warnings require review, and every passing upload requires explicit consent.
+
+Only the extracted text and metrics are posted to `/api/extract`; the original file stays in the browser. The API repeats
+the basic extension, length, and readability checks before calling OpenAI with `store: false`. PDF input is limited to 10
+pages, OCR to 4 pages, extracted text to 120,000 characters, and source files to 5 MB.
+
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
