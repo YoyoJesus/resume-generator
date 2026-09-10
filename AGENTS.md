@@ -15,7 +15,8 @@
 - Install dependencies with `npm install` from `web/`.
 - Use `npm run dev` for local development, `npm test` for Vitest, `npm run check` for Svelte/TypeScript diagnostics, and `npm run lint` for formatting checks.
 - Before committing, run focused tests for changed behavior, then `npm test`, `npm run check`, and `npm run lint`. Run `npm run build` for changes that can affect production bundling or deployment.
-- Preserve unrelated user changes. Use focused commits with imperative messages.
+- Preserve unrelated user changes and keep commits focused.
+- Write every commit message as exactly one line in Conventional Commits format: `type(optional-scope): imperative description`. Allowed types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, and `revert`; add `!` before the colon for a breaking change. Do not add a commit-message body or footer.
 - Push directly to `main` only when the user explicitly requests it; otherwise use the requested branch and pull-request workflow.
 - Pull requests submitted by an agent must end with an attribution footer that lists the actual provider and model used, using this exact format:
 

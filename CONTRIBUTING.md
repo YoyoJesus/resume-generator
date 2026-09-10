@@ -46,6 +46,30 @@ npm run build
 If a platform-specific build step fails after Vite successfully compiles the client and server bundles, describe the
 exact environment and failure in the pull request.
 
+## Commit messages
+
+Every commit must use a one-line [Conventional Commit](https://www.conventionalcommits.org/) message:
+
+```text
+type(optional-scope): imperative description
+```
+
+Allowed types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, and `revert`. Add `!` before the colon for a breaking change. Do not add a commit-message body or footer.
+
+Examples:
+
+```text
+feat(upload): add PDF quality gate
+fix: restore focus after closing dialog
+docs!: replace the template contract
+```
+
+The pull-request workflow validates every commit in the PR. You can run the same check locally from the repository root, replacing `main` with the appropriate base ref when needed:
+
+```sh
+node .github/scripts/check-commit-messages.mjs main HEAD
+```
+
 ## Pull requests
 
 - Keep the change focused and explain the user-visible outcome.
