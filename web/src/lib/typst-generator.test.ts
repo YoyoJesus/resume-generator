@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateTypstCode } from './typst-generator';
+import { generateTypstCode, RESUME_CONTENT_MARKER } from './typst-generator';
 import { defaultResumeData, defaultFontSettings } from './types';
 import type { ResumeData, WorkExperience } from './types';
 
@@ -38,6 +38,25 @@ describe('generateTypstCode clearance section', () => {
 		];
 		const code = generateTypstCode(data);
 		expect(code.indexOf('= Clearance')).toBeLessThan(code.indexOf('= Education'));
+	});
+});
+
+describe('custom Typst templates', () => {
+	it('uses the uploaded preamble and generated resume content', () => {
+		const customTemplate = `#let custom-style = true\n${RESUME_CONTENT_MARKER}\nThis is replaced`;
+		const data = withOverrides({ personalInfo: { ...defaultResumeData.personalInfo, name: 'Ada Lovelace' } });
+		const code = generateTypstCode(data, customTemplate);
+
+		expect(code).toContain('#let custom-style = true');
+		expect(code).toContain('author-name: "Ada Lovelace"');
+		expect(code).not.toContain('This is replaced');
+		expect(code).not.toContain('#let head-color');
+	});
+
+	it('falls back to the built-in template when the marker is absent', () => {
+		const code = generateTypstCode(baseData([]), '#let custom-style = true');
+		expect(code).toContain('#let head-color');
+		expect(code).not.toContain('#let custom-style');
 	});
 });
 

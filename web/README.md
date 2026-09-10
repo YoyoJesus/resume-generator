@@ -39,4 +39,17 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
+## Custom Typst templates
+
+The template uploader runs entirely in the browser. A custom `.typ` file must define the same `resume`, section-heading,
+and `skills` helpers as the built-in template and contain this marker:
+
+```typst
+// ========== RESUME CONTENT ==========
+```
+
+The app replaces everything after the marker with the resume generated from the form, compiles the result with the
+bundled Typst WASM compiler, and stores a valid template in `sessionStorage`. The upload dialog can download the current
+built-in template as a compatible starting point.
+
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

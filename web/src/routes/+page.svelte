@@ -7,9 +7,11 @@
 	import type { ResumeData } from '$lib/types';
 	import { defaultResumeData } from '$lib/types';
 	import { estimateOverOnePage } from '$lib/resume-utils';
+	import { customTemplateStore, type CustomTemplate } from '$lib/template-store';
 
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import UploadModal from '$lib/components/UploadModal.svelte';
+	import TemplateModal from '$lib/components/TemplateModal.svelte';
 	import OnetDrawer from '$lib/components/OnetDrawer.svelte';
 	import AppFooter from '$lib/components/AppFooter.svelte';
 	import TabBar from '$lib/components/TabBar.svelte';
@@ -32,10 +34,12 @@
 	let showCode = $state(false);
 	let isCompiling = $state(false);
 	let compileError = $state<string | null>(null);
-	let typstCode = $derived(generateTypstCode(data));
+	let customTemplate = $state<CustomTemplate | null>(null);
+	let typstCode = $derived(generateTypstCode(data, customTemplate?.source));
 	let svgPreview = $state<string>('');
 	let isPreviewLoading = $state(false);
 	let uploadOpen = $state(false);
+	let templateOpen = $state(false);
 	let tailorOpen = $state(false);
 	let showReviewBanner = $state(false);
 	let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -62,13 +66,20 @@
 	onMount(() => {
 		resumeStore.loadFromStorage();
 		onetStore.loadFromStorage();
+		customTemplateStore.loadFromStorage();
 		const unsub = resumeStore.subscribe((val) => {
 			data = val;
+		});
+		const unsubTemplate = customTemplateStore.subscribe((value) => {
+			customTemplate = value;
 		});
 		initCompiler()
 			.then(() => updatePreview(typstCode))
 			.catch(console.error);
-		return unsub;
+		return () => {
+			unsub();
+			unsubTemplate();
+		};
 	});
 
 	$effect(() => {
@@ -120,7 +131,9 @@
 		{isOverOnePage}
 		onDownload={downloadPdfFile}
 		onUpload={() => (uploadOpen = true)}
+		onTemplate={() => (templateOpen = true)}
 		onTailor={() => (tailorOpen = true)}
+		hasCustomTemplate={customTemplate !== null}
 	/>
 
 	<OnetDrawer bind:open={tailorOpen} bind:data onInserted={() => (showReviewBanner = true)} />
@@ -180,4 +193,5 @@
 
 	<AppFooter />
 	<UploadModal bind:open={uploadOpen} onApplied={() => (showReviewBanner = true)} />
+	<TemplateModal bind:open={templateOpen} {data} currentTemplate={customTemplate} />
 </div>
