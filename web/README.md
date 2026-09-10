@@ -52,4 +52,6 @@ The app replaces everything after the marker with the resume generated from the 
 bundled Typst WASM compiler, and stores a valid template in `sessionStorage`. The upload dialog can download the current
 built-in template as a compatible starting point.
 
+An upload-ready example is available at [`docs/examples/modern-teal.typ`](../docs/examples/modern-teal.typ).
+
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
