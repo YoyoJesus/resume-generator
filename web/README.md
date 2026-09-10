@@ -39,4 +39,25 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
+## Custom Typst templates
+
+The template uploader runs entirely in the browser. A custom `.typ` file must define the same `resume`, section-heading,
+and `skills` helpers as the built-in template and contain this marker:
+
+```typst
+// ========== RESUME CONTENT ==========
+```
+
+The app replaces everything after the marker with the resume generated from the form, compiles the result with the
+bundled Typst WASM compiler, and stores a valid template in `sessionStorage`. The upload dialog can download the current
+built-in template as a compatible starting point.
+
+An upload-ready example is available at [`docs/examples/modern-teal.typ`](../docs/examples/modern-teal.typ).
+
+DOCX templates are unpacked in a Vercel serverless function, and the OpenAI Responses API converts their relevant OOXML
+layout/style parts into a structured design. The app then generates a contract-safe Typst template from that design. The
+route accepts DOCX files up to 5 MB, uses no persistent application storage, requests `store: false`, and is capped at 60
+seconds for Vercel Hobby compatibility. Conversion preserves supported layout and style intent; images and Word-only
+effects may be approximated or omitted.
+
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

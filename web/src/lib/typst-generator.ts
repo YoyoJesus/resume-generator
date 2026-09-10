@@ -12,6 +12,8 @@ import type {
 import { defaultFontSettings, defaultResumeData } from './types';
 import { typstString, typstMarkup, typstNumber, typstColor, typstUrl } from './typst-escape';
 
+export const RESUME_CONTENT_MARKER = '// ========== RESUME CONTENT ==========';
+
 // Dates land in Typst code position, so anything that is not a plain YYYY-MM is rejected outright
 // rather than escaped.
 const YEAR_MONTH = /^(\d{4})-(\d{1,2})$/;
@@ -180,7 +182,8 @@ function generateClearance(clearance: Clearance[]): string {
 ${items}`;
 }
 
-export function generateTypstCode(data: ResumeData): string {
+/** Combines sanitized resume content with a compatible custom template or the built-in default. */
+export function generateTypstCode(data: ResumeData, customTemplate?: string | null): string {
 	const {
 		personalInfo,
 		profile,
@@ -222,7 +225,7 @@ export function generateTypstCode(data: ResumeData): string {
 
 	const defaults = defaultResumeData.colors;
 
-	return `#let head-color = rgb("${typstColor(colors.headColor, defaults.headColor)}")
+	const defaultCode = `#let head-color = rgb("${typstColor(colors.headColor, defaults.headColor)}")
 #let text-color = rgb("${typstColor(colors.textColor, defaults.textColor)}")
 #let acct-color = rgb("${typstColor(colors.accentColor, defaults.accentColor)}")
 #let link-color = rgb("${typstColor(colors.linkColor, defaults.linkColor)}")
@@ -465,7 +468,7 @@ export function generateTypstCode(data: ResumeData): string {
   v(-0.2em)
 }
 
-// ========== RESUME CONTENT ==========
+${RESUME_CONTENT_MARKER}
 
 #show: resume.with(
   author-name: "${typstString(personalInfo.name)}",
@@ -478,4 +481,15 @@ export function generateTypstCode(data: ResumeData): string {
 
 ${orderedSections}
 `;
+
+	if (!customTemplate) return defaultCode;
+
+	const customMarkerIndex = customTemplate.indexOf(RESUME_CONTENT_MARKER);
+	if (customMarkerIndex === -1) return defaultCode;
+
+	const generatedMarkerIndex = defaultCode.indexOf(RESUME_CONTENT_MARKER);
+	const customPreamble = customTemplate.slice(0, customMarkerIndex).trimEnd();
+	const generatedContent = defaultCode.slice(generatedMarkerIndex + RESUME_CONTENT_MARKER.length).trimStart();
+
+	return `${customPreamble}\n\n${RESUME_CONTENT_MARKER}\n\n${generatedContent}`;
 }
