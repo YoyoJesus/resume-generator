@@ -19,15 +19,16 @@
 		currentTemplate: CustomTemplate | null;
 	} = $props();
 
-	type Status = 'idle' | 'validating' | 'error';
+	type Status = 'idle' | 'converting' | 'validating' | 'error';
 	let status = $state<Status>('idle');
 	let errorMessage = $state('');
 	let acknowledged = $state(false);
 	let dragOver = $state(false);
 	let fileInput = $state<HTMLInputElement>();
+	let isBusy = $derived(status === 'converting' || status === 'validating');
 
 	function close() {
-		if (status === 'validating') return;
+		if (isBusy) return;
 		open = false;
 		status = 'idle';
 		errorMessage = '';
@@ -37,21 +38,46 @@
 
 	async function handleFile(file: File) {
 		if (!acknowledged) return;
-		status = 'validating';
 		errorMessage = '';
 
 		try {
-			if (!file.name.toLowerCase().endsWith('.typ')) throw new Error('Choose a Typst file ending in .typ.');
-			if (file.size > MAX_TEMPLATE_SIZE) throw new Error('The template must be 1 MB or smaller.');
+			const lowerName = file.name.toLowerCase();
+			const isTypst = lowerName.endsWith('.typ');
+			const isDocx = lowerName.endsWith('.docx');
+			if (!isTypst && !isDocx) throw new Error('Choose a Typst (.typ) or Word (.docx) template.');
+			if (isTypst && file.size > MAX_TEMPLATE_SIZE) throw new Error('The Typst template must be 1 MB or smaller.');
+			if (isDocx && file.size > 5 * 1024 * 1024) throw new Error('The DOCX template must be 5 MB or smaller.');
 
-			const source = await file.text();
-			const contractError = validateTemplateSource(source);
+			let template: CustomTemplate;
+			if (isDocx) {
+				status = 'converting';
+				const form = new FormData();
+				form.append('file', file);
+				const response = await fetch('/api/template/convert', { method: 'POST', body: form });
+				if (!response.ok) {
+					let message = "AI couldn't convert that Word template. Please try again.";
+					try {
+						const body = await response.json();
+						if (body?.error?.message) message = body.error.message;
+					} catch {
+						// Keep the fallback when the platform returns a non-JSON error page.
+					}
+					throw new Error(message);
+				}
+				const body = (await response.json()) as { data: CustomTemplate };
+				template = body.data;
+			} else {
+				template = { name: file.name, source: await file.text() };
+			}
+
+			status = 'validating';
+			const contractError = validateTemplateSource(template.source);
 			if (contractError) throw new Error(contractError);
 
 			// Compilation is the final gate. Nothing is cached until the combined template
 			// and current resume have produced a PDF successfully in the browser.
-			await compileToPdf(generateTypstCode(data, source));
-			customTemplateStore.save({ name: file.name, source });
+			await compileToPdf(generateTypstCode(data, template.source));
+			customTemplateStore.save(template);
 			status = 'idle';
 			close();
 		} catch (error) {
@@ -101,42 +127,40 @@
 		<div class="w-full max-w-lg space-y-4 rounded-lg bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
 			<div class="flex items-center justify-between gap-3">
 				<div>
-					<h2 class="text-lg font-semibold">Use your Typst template</h2>
+					<h2 class="text-lg font-semibold">Use a custom resume template</h2>
 					{#if currentTemplate}
 						<p class="mt-0.5 text-xs text-green-700">Active: {currentTemplate.name}</p>
 					{/if}
 				</div>
-				<button
-					class="secondary px-2 py-1 text-sm"
-					onclick={close}
-					disabled={status === 'validating'}
-					aria-label="Close">X</button
-				>
+				<button class="secondary px-2 py-1 text-sm" onclick={close} disabled={isBusy} aria-label="Close">X</button>
 			</div>
 
 			<div class="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-950">
 				<p class="font-medium">Template compatibility</p>
 				<p class="mt-1">
-					Your file must define the same resume and section helpers as the starter template and include this marker:
+					A Typst file must define the same resume and section helpers as the starter template and include this marker:
 				</p>
 				<code class="mt-2 block overflow-x-auto rounded bg-white/70 px-2 py-1 text-xs">{RESUME_CONTENT_MARKER}</code>
 				<p class="mt-2 text-xs">Content after the marker is replaced with the resume currently in the form.</p>
 				<p class="mt-1 text-xs">A valid template is kept only for this browser tab's session.</p>
+				<p class="mt-1 text-xs">Word templates are sent to AI for conversion; Typst templates stay local.</p>
+				<p class="mt-1 text-xs">Images and Word-only effects may be approximated or omitted.</p>
 				<button class="secondary mt-3 text-xs" type="button" onclick={downloadStarterTemplate}
 					>Download starter template</button
 				>
 			</div>
 
 			<label class="flex cursor-pointer items-start gap-2 rounded-md border border-gray-200 p-3">
-				<input class="mt-0.5" type="checkbox" bind:checked={acknowledged} disabled={status === 'validating'} />
+				<input class="mt-0.5" type="checkbox" bind:checked={acknowledged} disabled={isBusy} />
 				<span class="text-sm font-normal text-gray-700">
-					I understand that custom Typst code runs locally in my browser and must follow the template contract above.
+					I understand the template requirements and that a DOCX file will be sent to the configured AI service for
+					conversion.
 				</span>
 			</label>
 
 			<button
 				type="button"
-				disabled={!acknowledged || status === 'validating'}
+				disabled={!acknowledged || isBusy}
 				class="w-full rounded-lg border-2 border-dashed p-7 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-50 {dragOver
 					? 'border-purple-500 bg-purple-50'
 					: 'border-gray-300 hover:border-gray-400'}"
@@ -148,31 +172,39 @@
 				ondrop={onDrop}
 				onclick={() => fileInput?.click()}
 			>
-				{#if status === 'validating'}
+				{#if status === 'converting'}
+					<span class="text-gray-700">Converting Word template with AI...</span>
+				{:else if status === 'validating'}
 					<span class="text-gray-700">Validating and compiling template...</span>
 				{:else}
-					<span class="text-gray-600">Drag a .typ file here, or click to browse</span>
-					<span class="mt-1 block text-xs text-gray-400">Typst source - max 1 MB</span>
+					<span class="text-gray-600">Drag a .typ or .docx file here, or click to browse</span>
+					<span class="mt-1 block text-xs text-gray-400">Typst max 1 MB; Word max 5 MB</span>
 				{/if}
 			</button>
-			<input bind:this={fileInput} type="file" accept=".typ,text/plain" class="hidden" onchange={onPick} />
+			<input
+				bind:this={fileInput}
+				type="file"
+				accept=".typ,.docx,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+				class="hidden"
+				onchange={onPick}
+			/>
 
 			{#if status === 'error'}
 				<div class="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-					<p class="font-medium">Template validation failed</p>
+					<p class="font-medium">Template upload failed</p>
 					<p class="mt-1 break-words">{errorMessage}</p>
 				</div>
 			{/if}
 
 			<div class="flex justify-between gap-2">
 				{#if currentTemplate}
-					<button class="danger" type="button" onclick={useDefaultTemplate} disabled={status === 'validating'}
+					<button class="danger" type="button" onclick={useDefaultTemplate} disabled={isBusy}
 						>Use default template</button
 					>
 				{:else}
 					<span></span>
 				{/if}
-				<button class="secondary" type="button" onclick={close} disabled={status === 'validating'}>Cancel</button>
+				<button class="secondary" type="button" onclick={close} disabled={isBusy}>Cancel</button>
 			</div>
 		</div>
 	</div>
