@@ -17,6 +17,12 @@
 - Before committing, run focused tests for changed behavior, then `npm test`, `npm run check`, and `npm run lint`. Run `npm run build` for changes that can affect production bundling or deployment.
 - Preserve unrelated user changes. Use focused commits with imperative messages.
 - Push directly to `main` only when the user explicitly requests it; otherwise use the requested branch and pull-request workflow.
+- Pull requests submitted by an agent must end with an attribution footer that lists the actual provider and model used, using this exact format:
+
+  ```text
+  Agent provider: <provider>
+  Agent model: <model>
+  ```
 
 ## Architecture and deployment
 
