@@ -106,6 +106,7 @@ function isUsefulPart(path: string): boolean {
 	);
 }
 
+/** Extracts a bounded set of layout-relevant OOXML parts from a DOCX archive. */
 export async function extractDocxTemplateContext(buffer: Buffer): Promise<string> {
 	const zip = await JSZip.loadAsync(buffer);
 	const extraPaths = Object.keys(zip.files).filter((path) => isUsefulPart(path) && !PRIMARY_PARTS.includes(path));
@@ -135,6 +136,7 @@ function hex(value: unknown, fallback: string): string {
 	return typeof value === 'string' && /^[0-9a-f]{6}$/i.test(value) ? value : fallback;
 }
 
+/** Converts an AI-inferred, schema-constrained design into contract-safe Typst source. */
 export function generateTypstTemplateFromDesign(input: TemplateDesign): string {
 	const paper = input.paper === 'a4' ? 'a4' : 'us-letter';
 	const alignment = ['left', 'center', 'right'].includes(input.nameAlignment) ? input.nameAlignment : 'left';

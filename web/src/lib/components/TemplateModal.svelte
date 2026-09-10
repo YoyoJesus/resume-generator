@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { compileToPdf } from '$lib/pdf-compiler';
+	import { tick } from 'svelte';
 	import { generateTypstCode, RESUME_CONTENT_MARKER } from '$lib/typst-generator';
 	import {
 		customTemplateStore,
 		MAX_TEMPLATE_SIZE,
-		validateTemplateSource,
+		validateTemplateCompatibility,
 		type CustomTemplate,
 	} from '$lib/template-store';
 	import type { ResumeData } from '$lib/types';
@@ -25,7 +25,15 @@
 	let acknowledged = $state(false);
 	let dragOver = $state(false);
 	let fileInput = $state<HTMLInputElement>();
+	let dialog = $state<HTMLDivElement>();
 	let isBusy = $derived(status === 'converting' || status === 'validating');
+
+	$effect(() => {
+		if (!open) return;
+		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		void tick().then(() => dialog?.focus());
+		return () => opener?.focus();
+	});
 
 	function close() {
 		if (isBusy) return;
@@ -71,12 +79,10 @@
 			}
 
 			status = 'validating';
-			const contractError = validateTemplateSource(template.source);
+			const contractError = await validateTemplateCompatibility(template.source);
 			if (contractError) throw new Error(contractError);
 
-			// Compilation is the final gate. Nothing is cached until the combined template
-			// and current resume have produced a PDF successfully in the browser.
-			await compileToPdf(generateTypstCode(data, template.source));
+			// Nothing is cached until a fully populated fixture has exercised every helper.
 			customTemplateStore.save(template);
 			status = 'idle';
 			close();
@@ -114,6 +120,36 @@
 		anchor.click();
 		URL.revokeObjectURL(url);
 	}
+
+	function onDialogKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			close();
+			return;
+		}
+		if (event.key !== 'Tab' || !dialog) return;
+
+		const focusable = Array.from(
+			dialog.querySelectorAll<HTMLElement>(
+				'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+			),
+		).filter((element) => !element.hasAttribute('hidden'));
+		if (focusable.length === 0) {
+			event.preventDefault();
+			dialog.focus();
+			return;
+		}
+
+		const first = focusable[0];
+		const last = focusable[focusable.length - 1];
+		if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && document.activeElement === last) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
 </script>
 
 {#if open}
@@ -124,10 +160,18 @@
 			if (event.target === event.currentTarget) close();
 		}}
 	>
-		<div class="w-full max-w-lg space-y-4 rounded-lg bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
+		<div
+			bind:this={dialog}
+			class="w-full max-w-lg space-y-4 rounded-lg bg-white p-6 shadow-xl"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="template-dialog-title"
+			tabindex="-1"
+			onkeydown={onDialogKeydown}
+		>
 			<div class="flex items-center justify-between gap-3">
 				<div>
-					<h2 class="text-lg font-semibold">Use a custom resume template</h2>
+					<h2 id="template-dialog-title" class="text-lg font-semibold">Use a custom resume template</h2>
 					{#if currentTemplate}
 						<p class="mt-0.5 text-xs text-green-700">Active: {currentTemplate.name}</p>
 					{/if}

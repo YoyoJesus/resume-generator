@@ -182,6 +182,7 @@ function generateClearance(clearance: Clearance[]): string {
 ${items}`;
 }
 
+/** Combines sanitized resume content with a compatible custom template or the built-in default. */
 export function generateTypstCode(data: ResumeData, customTemplate?: string | null): string {
 	const {
 		personalInfo,
