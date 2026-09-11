@@ -77,3 +77,13 @@ node .github/scripts/check-commit-messages.mjs main HEAD
 - Include screenshots or recordings for meaningful UI changes.
 - Call out privacy, security, AI-cost, or Vercel deployment implications.
 - Respond to review comments with either a fix or a concise technical explanation.
+
+## AI agent attribution
+
+Any issue or pull request prepared by an AI agent must end with this footer, filled with the actual values used. The harness is the agent application or coding environment, such as Codex, Claude Code, or Cursor.
+
+```text
+Agent provider: <provider>
+Agent model: <model>
+Agent harness: <harness>
+```

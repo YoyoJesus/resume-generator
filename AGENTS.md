@@ -18,11 +18,12 @@
 - Preserve unrelated user changes and keep commits focused.
 - Write every commit message as exactly one line in Conventional Commits format: `type(optional-scope): imperative description`. Allowed types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, and `revert`; add `!` before the colon for a breaking change. Do not add a commit-message body or footer.
 - Never push directly to `main`, even when the user explicitly requests it, always use the requested branch and pull-request workflow.
-- Pull requests submitted by an agent must end with an attribution footer that lists the actual provider and model used, using this exact format:
+- Issues and pull requests submitted by an agent must end with an attribution footer that lists the actual provider, model, and harness used, using this exact format:
 
   ```text
   Agent provider: <provider>
   Agent model: <model>
+  Agent harness: <harness>
   ```
 
 ## Architecture and deployment

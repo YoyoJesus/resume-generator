@@ -23,6 +23,15 @@ body:
     attributes:
       label: Alternatives considered
       description: Describe any workarounds or other approaches you considered.
+  - type: textarea
+    id: agent_attribution
+    attributes:
+      label: Agent attribution (AI submissions only)
+      description: If an AI agent prepared this issue, identify its actual provider, model, and harness.
+      placeholder: |
+        Agent provider: OpenAI
+        Agent model: gpt-5.6-sol
+        Agent harness: Codex
   - type: checkboxes
     id: impact
     attributes:
@@ -38,4 +47,6 @@ body:
       label: Before submitting
       options:
         - label: I searched for an existing issue or pull request covering this request.
+          required: true
+        - label: If an AI agent prepared this issue, I included its provider, model, and harness above.
           required: true

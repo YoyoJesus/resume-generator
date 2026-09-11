@@ -23,3 +23,6 @@
 - [ ] I updated relevant documentation.
 - [ ] I used synthetic test data and did not commit secrets or personal resume information.
 - [ ] I reviewed the diff for unrelated generated or formatting changes.
+- [ ] If an AI agent prepared this PR, I added its provider, model, and harness footer below.
+
+<!-- AI-authored PRs must end with: Agent provider, Agent model, and Agent harness. Remove this comment. -->
