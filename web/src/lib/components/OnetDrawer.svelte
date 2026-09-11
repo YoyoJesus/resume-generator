@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { onetStore } from '$lib/onet-store';
 	import { onetSectionLabels } from '$lib/onet-types';
@@ -29,8 +30,17 @@
 	let tailorError = $state('');
 	let tailorNote = $state('');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	let drawer = $state<HTMLElement>();
+	let searchInput = $state<HTMLInputElement>();
 
 	const GENERIC_ERROR = "Can't reach O*NET. Check your connection and retry.";
+
+	$effect(() => {
+		if (!open) return;
+		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		void tick().then(() => (searchInput ?? drawer)?.focus());
+		return () => opener?.focus();
+	});
 
 	async function readError(res: Response): Promise<string> {
 		try {
@@ -200,7 +210,31 @@
 	}
 
 	function onKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') close();
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			close();
+			return;
+		}
+		if (e.key !== 'Tab' || !drawer) return;
+		const focusable = Array.from(
+			drawer.querySelectorAll<HTMLElement>(
+				'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+			),
+		).filter((element) => !element.hasAttribute('hidden'));
+		if (focusable.length === 0) {
+			e.preventDefault();
+			drawer.focus();
+			return;
+		}
+		const first = focusable[0];
+		const last = focusable.at(-1)!;
+		if (e.shiftKey && (document.activeElement === first || document.activeElement === drawer)) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && document.activeElement === last) {
+			e.preventDefault();
+			first.focus();
+		}
 	}
 
 	// Bullet-shaped sections (tasks, work activities) go into experience or
@@ -223,19 +257,22 @@
 	];
 </script>
 
-<svelte:window onkeydown={onKeydown} />
-
 {#if open}
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div class="fixed inset-0 z-40 bg-black/30" transition:fade={{ duration: 150 }} onclick={close}></div>
 
-	<aside
+	<div
+		bind:this={drawer}
 		class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
 		transition:fly={{ x: 400, duration: 200 }}
-		aria-label="Tailor to a job"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="tailor-dialog-title"
+		tabindex="-1"
+		onkeydown={onKeydown}
 	>
 		<div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-			<h2 class="text-lg font-semibold">Tailor to a job</h2>
+			<h2 id="tailor-dialog-title" class="text-lg font-semibold">Tailor to a job</h2>
 			<button class="secondary px-2 py-1 text-sm" onclick={close} aria-label="Close">X</button>
 		</div>
 
@@ -243,6 +280,7 @@
 			{#if !occupation}
 				<label for="onet-search">Search O*NET occupations</label>
 				<input
+					bind:this={searchInput}
 					id="onet-search"
 					type="text"
 					bind:value={query}
@@ -444,5 +482,5 @@
 			>
 			(USDOL/ETA), CC BY 4.0.
 		</p>
-	</aside>
+	</div>
 {/if}
