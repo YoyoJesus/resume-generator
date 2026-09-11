@@ -79,14 +79,10 @@
 }
 
 #let period-worked(start-date, end-date) = {
-  let finish = if type(end-date) == str {
-    end-date
-  } else if end-date.year() == datetime.today().year() and end-date.month() == datetime.today().month() {
-    "Present"
-  } else {
-    end-date.display("[month repr:short] [year]")
-  }
-  [#start-date.display("[month repr:short] [year]") - #finish]
+  let display-date(value) = if type(value) == str { value } else { value.display("[month repr:short] [year]") }
+  let start = display-date(start-date)
+  let finish = display-date(end-date)
+  if start == "" { finish } else if finish == "" { start } else { [#start - #finish] }
 }
 
 #let work-heading(title, company, location, start-date, end-date, body) = {

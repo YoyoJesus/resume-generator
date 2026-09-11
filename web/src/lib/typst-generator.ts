@@ -17,6 +17,7 @@ export const RESUME_CONTENT_MARKER = '// ========== RESUME CONTENT ==========';
 // Dates land in Typst code position, so anything that is not a plain YYYY-MM is rejected outright
 // rather than escaped.
 const YEAR_MONTH = /^(\d{4})-(\d{1,2})$/;
+const YEAR = /^\d{4}$/;
 
 function parseYearMonth(dateStr: string): { year: number; month: number } | null {
 	const match = YEAR_MONTH.exec(dateStr.trim());
@@ -27,8 +28,9 @@ function parseYearMonth(dateStr: string): { year: number; month: number } | null
 }
 
 function formatDate(dateStr: string): string {
+	const trimmed = dateStr.trim();
 	const parsed = parseYearMonth(dateStr);
-	if (!parsed) return 'datetime.today()';
+	if (!parsed) return YEAR.test(trimmed) ? `"${trimmed}"` : '""';
 	return `datetime(year: ${parsed.year}, month: ${parsed.month}, day: 1)`;
 }
 
@@ -377,22 +379,11 @@ export function generateTypstCode(data: ResumeData, customTemplate?: string | nu
 }
 
 #let period_worked(start-date, end-date) = {
-  if type(end-date) == str and end-date == "Present" {
-    end-date = datetime.today()
-  }
-
-  return [
-    #start-date.display("[month repr:short] [year]") -
-    #if (
-      (end-date.month() == datetime.today().month()) and
-        (end-date.year() == datetime.today().year())
-      ) [
-        Present
-      ] else [
-        #end-date.display("[month repr:short] [year]")
-      ]
-    ]
-  }
+  let display-date(value) = if type(value) == str { value } else { value.display("[month repr:short] [year]") }
+  let start = display-date(start-date)
+  let finish = display-date(end-date)
+  if start == "" { finish } else if finish == "" { start } else { [#start - #finish] }
+}
 
 #let work-heading(title, company, location, start-date, end-date, body) = {
   generic_2x2(
