@@ -1,3 +1,5 @@
+import type { ExtractedResume } from '$lib/types';
+
 export const MODEL = 'gpt-5.6-luna';
 
 export type ExtractErrorCode =
@@ -62,10 +64,8 @@ export const EXTRACTION_PROMPT = [
 	'Format dates as "YYYY-MM" when a month and year are available; otherwise use "YYYY" or an empty string.',
 	'Set isPresent to true only when the resume says a role/study is ongoing (e.g. "Present", "Current").',
 	'For linkedin and github, return just the username/handle, not the full URL.',
-	'Do not invent or infer data that is not in the resume.',
-	'You can try to fill in sections with data from other sections if the information is clearly relevant (e.g. a project mentioned in a work experience bullet).',
-	'In fact, do your best to fill in as much of the schema as possible, but never fabricate details. If you can reasonably infer a detail (e.g. a linkedin URL from a name), you may do so, but be conservative and prioritize accuracy over completeness.',
-	'Do try to complete the schema as much as possible using any relevant information in the resume, but do not fabricate details that are not explicitly stated or very clearly implied. If you can reasonably infer a detail (e.g. a linkedin URL from a name), you may do so, but be conservative and prioritize accuracy over completeness.',
+	'Do not invent, guess, or derive any value that is not explicitly present in the resume, especially contact details and profile URLs.',
+	'You may organize explicitly stated facts into the most appropriate section, but do not add new facts while doing so.',
 ].join(' ');
 
 const stringArray = { type: 'array', items: { type: 'string' } } as const;
@@ -216,3 +216,58 @@ export const RESUME_SCHEMA = {
 		},
 	},
 } as const;
+
+function record(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasFields(value: unknown, strings: string[], booleans: string[] = []): boolean {
+	return (
+		record(value) &&
+		strings.every((key) => typeof value[key] === 'string') &&
+		booleans.every((key) => typeof value[key] === 'boolean')
+	);
+}
+
+function hasEntries(value: unknown, strings: string[], booleans: string[] = [], bullets = false): boolean {
+	return (
+		Array.isArray(value) &&
+		value.every(
+			(item) =>
+				hasFields(item, strings, booleans) &&
+				(!bullets ||
+					(Array.isArray((item as Record<string, unknown>).bullets) &&
+						((item as Record<string, unknown>).bullets as unknown[]).every((bullet) => typeof bullet === 'string'))),
+		)
+	);
+}
+
+/** Validates parsed structured output before it reaches the browser. */
+export function validateExtractedResume(value: unknown): ExtractedResume | null {
+	if (!record(value)) return null;
+	if (
+		!hasFields(value.personalInfo, ['name', 'phone', 'location', 'email', 'website', 'linkedin', 'github']) ||
+		!hasFields(value.profile, ['summary']) ||
+		!hasEntries(
+			value.education,
+			['institution', 'location', 'degree', 'major', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) ||
+		!hasEntries(value.projects, ['name', 'stack', 'url', 'award'], [], true) ||
+		!hasEntries(value.workExperience, ['title', 'company', 'location', 'startDate', 'endDate'], ['isPresent'], true) ||
+		!hasEntries(value.leadership, ['title', 'organization', 'location', 'startDate', 'endDate'], ['isPresent'], true) ||
+		!hasEntries(value.skills, ['category', 'skills']) ||
+		!hasEntries(value.achievements, ['title', 'date', 'description']) ||
+		!hasEntries(value.clearance, ['level', 'status', 'dateGranted'])
+	) {
+		return null;
+	}
+
+	const validClearance = (value.clearance as Record<string, unknown>[]).every(
+		(entry) =>
+			['Confidential', 'Secret', 'Top Secret', 'Top Secret/SCI', 'Public Trust'].includes(entry.level as string) &&
+			['Active', 'Inactive', 'Eligible'].includes(entry.status as string),
+	);
+	return validClearance ? (value as unknown as ExtractedResume) : null;
+}

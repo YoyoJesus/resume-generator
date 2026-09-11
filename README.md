@@ -86,7 +86,7 @@ A custom `.typ` file must implement the same `resume`, section-heading, and `ski
 
 The app replaces content after the marker with the resume generated from the form, then compiles the complete document in the browser before activating it. Typst templates are limited to 1 MB.
 
-Use [the example custom template](docs/examples/modern-teal.typ) or download the built-in template from the upload dialog as a starting point. DOCX templates are limited to 5 MB; their supported layout and style are converted into Typst, while Word-only effects and images may be approximated or omitted.
+Use [the example custom template](docs/examples/modern-teal.typ) or download the built-in template from the upload dialog as a starting point. DOCX templates are limited to 4 MB so multipart uploads remain below Vercel's request limit; their supported layout and style are converted into Typst, while Word-only effects and images may be approximated or omitted.
 
 ## Deployment
 

@@ -1,9 +1,11 @@
 import JSZip from 'jszip';
+import type { Readable } from 'node:stream';
+export { DOCX_TEMPLATE_MAX_BYTES } from '$lib/template-limits';
 
 export const TEMPLATE_CONVERSION_MODEL = 'gpt-5.6-luna';
-export const DOCX_TEMPLATE_MAX_BYTES = 5 * 1024 * 1024;
 export const TEMPLATE_CONTENT_MARKER = '// ========== RESUME CONTENT ==========';
 export const MAX_OOXML_CONTEXT_CHARS = 180_000;
+export const MAX_OOXML_PART_BYTES = 1024 * 1024;
 
 const PRIMARY_PARTS = [
 	'word/styles.xml',
@@ -106,6 +108,33 @@ function isUsefulPart(path: string): boolean {
 	);
 }
 
+async function readBoundedPart(entry: JSZip.JSZipObject, path: string): Promise<string> {
+	const stream = entry.nodeStream('nodebuffer') as Readable;
+	return new Promise((resolve, reject) => {
+		const chunks: Buffer[] = [];
+		let size = 0;
+		let settled = false;
+		stream.on('data', (chunk: Buffer | Uint8Array) => {
+			if (settled) return;
+			const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+			size += bytes.byteLength;
+			if (size > MAX_OOXML_PART_BYTES) {
+				settled = true;
+				stream.destroy();
+				reject(new Error(`DOCX part ${path} is too large when uncompressed.`));
+				return;
+			}
+			chunks.push(bytes);
+		});
+		stream.on('end', () => {
+			if (!settled) resolve(Buffer.concat(chunks, size).toString('utf8'));
+		});
+		stream.on('error', (error) => {
+			if (!settled) reject(error);
+		});
+	});
+}
+
 /** Extracts a bounded set of layout-relevant OOXML parts from a DOCX archive. */
 export async function extractDocxTemplateContext(buffer: Buffer): Promise<string> {
 	const zip = await JSZip.loadAsync(buffer);
@@ -119,7 +148,11 @@ export async function extractDocxTemplateContext(buffer: Buffer): Promise<string
 		if (remaining <= 0) break;
 		const entry = zip.file(path);
 		if (!entry) continue;
-		const xml = await entry.async('string');
+		const uncompressedSize = (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize;
+		if (typeof uncompressedSize === 'number' && uncompressedSize > MAX_OOXML_PART_BYTES) {
+			throw new Error(`DOCX part ${path} is too large when uncompressed.`);
+		}
+		const xml = await readBoundedPart(entry, path);
 		const included = xml.slice(0, remaining);
 		parts.push(`--- ${path} ---\n${included}`);
 		remaining -= included.length;
@@ -232,8 +265,10 @@ export function generateTypstTemplateFromDesign(input: TemplateDesign): string {
 }
 
 #let period-worked(start-date, end-date) = {
-  let finish = if type(end-date) == str { end-date } else if end-date.year() == datetime.today().year() and end-date.month() == datetime.today().month() { "Present" } else { end-date.display("[month repr:short] [year]") }
-  [#start-date.display("[month repr:short] [year]") - #finish]
+  let display-date(value) = if type(value) == str { value } else { value.display("[month repr:short] [year]") }
+  let start = display-date(start-date)
+  let finish = display-date(end-date)
+  if start == "" { finish } else if finish == "" { start } else { [#start - #finish] }
 }
 
 #let work-heading(title, company, location, start-date, end-date, body) = {

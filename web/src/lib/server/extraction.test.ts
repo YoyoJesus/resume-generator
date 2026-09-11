@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapOpenAIError, RESUME_SCHEMA } from './extraction';
+import { EXTRACTION_PROMPT, mapOpenAIError, RESUME_SCHEMA, validateExtractedResume } from './extraction';
 
 describe('mapOpenAIError', () => {
 	it('maps insufficient_quota 429 to quota_exceeded', () => {
@@ -52,5 +52,33 @@ describe('RESUME_SCHEMA clearance field', () => {
 			'Public Trust',
 		]);
 		expect(clearanceItems.properties.status.enum).toEqual(['Active', 'Inactive', 'Eligible']);
+	});
+});
+
+describe('extraction output safety', () => {
+	const valid = {
+		personalInfo: { name: 'Ada', phone: '', location: '', email: '', website: '', linkedin: '', github: '' },
+		profile: { summary: '' },
+		education: [],
+		projects: [],
+		workExperience: [],
+		leadership: [],
+		skills: [],
+		achievements: [],
+		clearance: [],
+	};
+
+	it('forbids guessed contact data without contradictory exceptions', () => {
+		expect(EXTRACTION_PROMPT).toContain('Do not invent, guess, or derive');
+		expect(EXTRACTION_PROMPT).not.toContain('reasonably infer');
+	});
+
+	it('accepts a complete schema-shaped extraction', () => {
+		expect(validateExtractedResume(valid)).toEqual(valid);
+	});
+
+	it('rejects missing or incorrectly typed model fields', () => {
+		expect(validateExtractedResume({ ...valid, skills: [{ category: 'Tools', skills: 42 }] })).toBeNull();
+		expect(validateExtractedResume({ ...valid, personalInfo: { name: 'Ada' } })).toBeNull();
 	});
 });

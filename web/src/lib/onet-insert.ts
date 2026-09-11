@@ -5,7 +5,7 @@ import { generateId } from './resume-utils';
 // ResumeData plus the dotted field path(s) to highlight, and the caller assigns
 // the result. A null path means nothing changed.
 
-export type BulletTargetKind = 'experience' | 'project';
+export type BulletTargetKind = 'experience' | 'project' | 'education' | 'leadership';
 
 export interface BulletTarget {
 	id: string;
@@ -29,7 +29,17 @@ export function bulletTargets(data: ResumeData): BulletTarget[] {
 		kind: 'project' as const,
 		label: p.name || 'Untitled project',
 	}));
-	return [...experience, ...projects];
+	const education = data.education.map((entry) => ({
+		id: entry.id,
+		kind: 'education' as const,
+		label: [entry.degree, entry.institution].filter(Boolean).join(' at ') || 'Untitled education',
+	}));
+	const leadership = data.leadership.map((entry) => ({
+		id: entry.id,
+		kind: 'leadership' as const,
+		label: [entry.title, entry.organization].filter(Boolean).join(' at ') || 'Untitled leadership',
+	}));
+	return [...experience, ...projects, ...education, ...leadership];
 }
 
 export function skillTargets(data: ResumeData): SkillTarget[] {
@@ -42,7 +52,14 @@ export function appendBullet(
 	id: string,
 	text: string,
 ): { data: ResumeData; path: string | null } {
-	const key = kind === 'experience' ? 'workExperience' : 'projects';
+	const key =
+		kind === 'experience'
+			? 'workExperience'
+			: kind === 'project'
+				? 'projects'
+				: kind === 'education'
+					? 'education'
+					: 'leadership';
 	const entries = data[key];
 	const index = entries.findIndex((e) => e.id === id);
 	if (index === -1) return { data, path: null };

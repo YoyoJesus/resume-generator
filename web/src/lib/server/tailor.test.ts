@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateEdits, MAX_EDITS, buildTailorInput, TAILOR_SCHEMA } from './tailor';
+import { validateEdits, MAX_EDITS, buildTailorInput, isValidTailorResume, TAILOR_SCHEMA } from './tailor';
 import { defaultResumeData } from '$lib/types';
 import type { ResumeData } from '$lib/types';
 import type { OnetOccupation } from '$lib/onet-types';
@@ -117,6 +117,52 @@ describe('buildTailorInput', () => {
 		expect([...a.skills]).toEqual(['s1']);
 	});
 
+	it('offers profile, education, leadership, achievement, project stack, and font targets', () => {
+		const r = resume();
+		r.profile.summary = 'Software engineer.';
+		r.education = [
+			{
+				id: 'e1',
+				institution: 'University',
+				location: '',
+				degree: 'BS',
+				major: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: [],
+			},
+		];
+		r.leadership = [
+			{
+				id: 'l1',
+				title: 'Lead',
+				organization: 'Club',
+				location: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: [],
+			},
+		];
+		r.projects[0] = { id: 'p1', name: 'Tool', stack: 'TypeScript', url: '', award: '', bullets: [] };
+		r.achievements = [{ id: 'a1', title: 'Award', date: '', description: 'Recognized for impact.' }];
+		const { allowed: a } = buildTailorInput(r, occupation);
+
+		expect([...a.bullets]).toEqual(['w1', 'p1', 'e1', 'l1']);
+		expect(a.fields).toEqual(
+			new Set([
+				'profile',
+				'project-stack:p1',
+				'achievement-description:a1',
+				'baseSize',
+				'nameSize',
+				'headingSize',
+				'contactSize',
+			]),
+		);
+	});
+
 	it('includes the resume evidence and the O*NET items in the prompt text', () => {
 		const { prompt } = buildTailorInput(resume(), occupation);
 		expect(prompt).toContain('Built an API.'); // existing bullet, so the model can ground its rewrite
@@ -132,5 +178,34 @@ describe('buildTailorInput', () => {
 		const { prompt } = buildTailorInput(r, occupation);
 		expect(prompt).not.toContain('secret@example.com');
 		expect(prompt).not.toContain('555-0100');
+	});
+});
+
+describe('isValidTailorResume', () => {
+	it('accepts the complete application resume shape', () => {
+		expect(isValidTailorResume(structuredClone(defaultResumeData))).toBe(true);
+	});
+
+	it('rejects missing arrays before prompt construction', () => {
+		const resume = structuredClone(defaultResumeData) as unknown as Record<string, unknown>;
+		delete resume.education;
+		expect(isValidTailorResume(resume)).toBe(false);
+	});
+
+	it('rejects malformed and oversized bullet fields', () => {
+		const resume = structuredClone(defaultResumeData);
+		resume.workExperience = [
+			{
+				id: 'w1',
+				title: 'Engineer',
+				company: 'Acme',
+				location: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: ['x'.repeat(12_001)],
+			},
+		];
+		expect(isValidTailorResume(resume)).toBe(false);
 	});
 });

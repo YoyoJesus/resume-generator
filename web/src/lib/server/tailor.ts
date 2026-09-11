@@ -6,6 +6,80 @@ import { estimateOverOnePage } from '$lib/resume-utils';
 // A ceiling on how much one click can change, so a runaway response can't
 // rewrite the whole resume in a single pass.
 export const MAX_EDITS = 12;
+export const MAX_TAILOR_BODY_BYTES = 200_000;
+
+const MAX_ITEMS = 100;
+const MAX_FIELD_CHARS = 12_000;
+
+function record(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function boundedString(value: unknown): value is string {
+	return typeof value === 'string' && value.length <= MAX_FIELD_CHARS;
+}
+
+function objectFields(value: unknown, strings: string[], booleans: string[] = []): boolean {
+	return (
+		record(value) &&
+		strings.every((key) => boundedString(value[key])) &&
+		booleans.every((key) => typeof value[key] === 'boolean')
+	);
+}
+
+function numericFields(value: unknown, keys: string[]): boolean {
+	return record(value) && keys.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]));
+}
+
+function entries(value: unknown, strings: string[], booleans: string[] = [], bullets = false): boolean {
+	return (
+		Array.isArray(value) &&
+		value.length <= MAX_ITEMS &&
+		value.every(
+			(item) =>
+				objectFields(item, strings, booleans) &&
+				(!bullets ||
+					(Array.isArray((item as Record<string, unknown>).bullets) &&
+						((item as Record<string, unknown>).bullets as unknown[]).length <= MAX_ITEMS &&
+						((item as Record<string, unknown>).bullets as unknown[]).every(boundedString))),
+		)
+	);
+}
+
+export function isValidTailorResume(value: unknown): value is ResumeData {
+	if (!record(value)) return false;
+	return (
+		objectFields(value.personalInfo, ['name', 'phone', 'location', 'email', 'website', 'linkedin', 'github']) &&
+		objectFields(value.profile, ['summary']) &&
+		entries(value.clearance, ['id', 'level', 'status', 'dateGranted']) &&
+		entries(
+			value.education,
+			['id', 'institution', 'location', 'degree', 'major', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) &&
+		entries(value.projects, ['id', 'name', 'stack', 'url', 'award'], [], true) &&
+		entries(
+			value.workExperience,
+			['id', 'title', 'company', 'location', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) &&
+		entries(
+			value.leadership,
+			['id', 'title', 'organization', 'location', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) &&
+		entries(value.skills, ['id', 'category', 'skills']) &&
+		entries(value.achievements, ['id', 'title', 'date', 'description']) &&
+		objectFields(value.colors, ['headColor', 'textColor', 'accentColor', 'linkColor']) &&
+		numericFields(value.fonts, ['baseSize', 'nameSize', 'headingSize', 'contactSize']) &&
+		Array.isArray(value.sectionOrder) &&
+		value.sectionOrder.length <= MAX_ITEMS &&
+		value.sectionOrder.every(boundedString)
+	);
+}
 
 export interface AllowedTargets {
 	bullets: Set<string>;
@@ -70,19 +144,7 @@ export function buildTailorInput(
 	resume: ResumeData,
 	occupation: OnetOccupation,
 ): { prompt: string; allowed: AllowedTargets } {
-	const bullets = [
-		...bulletTargets(resume),
-		...resume.education.map((e) => ({
-			id: e.id,
-			kind: 'education' as const,
-			label: `${e.degree} at ${e.institution}`,
-		})),
-		...resume.leadership.map((e) => ({
-			id: e.id,
-			kind: 'leadership' as const,
-			label: `${e.title} at ${e.organization}`,
-		})),
-	];
+	const bullets = [...bulletTargets(resume)];
 	const skills = skillTargets(resume);
 	const fields = resume.profile.summary.trim() ? ['profile'] : [];
 	const fontBounds = 'baseSize=6-14, nameSize=14-32, headingSize=10-24, contactSize=7-16';
@@ -192,7 +254,7 @@ export function buildTailorInput(
 						resume.projects.find((project) => project.id === target.id) ??
 						resume.education.find((education) => education.id === target.id) ??
 						resume.leadership.find((leadership) => leadership.id === target.id);
-					return [target.id, entry?.bullets.length ?? 0];
+					return [target.id, entry?.bullets.filter(Boolean).length ?? 0];
 				}),
 			),
 		},

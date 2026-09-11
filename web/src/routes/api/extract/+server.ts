@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
 import {
 	MODEL,
@@ -8,13 +8,14 @@ import {
 	EXTRACTION_PROMPT,
 	mapOpenAIError,
 	extractError,
+	validateExtractedResume,
 	type ExtractError,
 } from '$lib/server/extraction';
-import type { ExtractedResume } from '$lib/types';
 import { validateExtractedDocument, type DocumentMetrics } from '$lib/document-quality';
 
 // This endpoint is dynamic (the root layout sets prerender=true for pages).
 export const prerender = false;
+export const config = { maxDuration: 60 };
 
 function fail(e: ExtractError): Response {
 	return json({ error: { code: e.code, message: e.message } }, { status: e.status });
@@ -42,8 +43,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const gateError = validateExtractedDocument(filename, text);
 	if (gateError) return preflightFailure(gateError);
+	if (!env.OPENAI_API_KEY) return fail(extractError('auth'));
 
-	const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 	const method = ['text', 'ocr', 'hybrid'].includes(metrics?.method ?? '') ? metrics?.method : 'text';
 	const content: OpenAI.Responses.ResponseInputContent[] = [
 		{
@@ -72,23 +74,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const raw = response.output_text;
 		if (!raw) return fail(extractError('parse_failed'));
 
-		const data = JSON.parse(raw) as ExtractedResume;
+		const data = validateExtractedResume(JSON.parse(raw));
+		if (!data) return fail(extractError('parse_failed'));
 		return json({ data });
 	} catch (err) {
-		console.error(
-			'OPENAI_DEBUG',
-			JSON.stringify(
-				{
-					name: (err as any)?.name,
-					status: (err as any)?.status,
-					code: (err as any)?.code,
-					message: (err as any)?.message,
-					error: (err as any)?.error,
-				},
-				null,
-				2,
-			),
-		);
+		const detail = err as { status?: unknown; code?: unknown };
+		console.error('OpenAI extraction failed', { status: detail?.status, code: detail?.code });
 		// SyntaxError from JSON.parse -> parse_failed; otherwise map the OpenAI/network error.
 		if (err instanceof SyntaxError) return fail(extractError('parse_failed'));
 		return fail(mapOpenAIError(err));

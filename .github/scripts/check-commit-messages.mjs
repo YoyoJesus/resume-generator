@@ -12,7 +12,7 @@ const conventionalCommit =
 
 const git = (...args) =>
   execFileSync("git", args, { encoding: "utf8" }).trimEnd();
-const commits = git("rev-list", "--reverse", `${base}..${head}`)
+const commits = git("rev-list", "--no-merges", "--reverse", `${base}..${head}`)
   .split(/\r?\n/)
   .filter(Boolean);
 

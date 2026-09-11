@@ -30,6 +30,9 @@ jobs:
           "${{ github.event.pull_request.base.sha }}"
           "${{ github.event.pull_request.head.sha }}"
 
+      - name: Test repository policy validators
+        run: node --test .github/scripts/check-agent-attribution.test.mjs
+
   test:
     name: Test and check
     runs-on: ubuntu-latest
@@ -56,3 +59,9 @@ jobs:
 
       - name: Run Svelte and TypeScript checks
         run: npm run check
+
+      - name: Check formatting
+        run: npm run lint
+
+      - name: Build production application
+        run: npm run build

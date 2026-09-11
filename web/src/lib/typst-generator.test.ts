@@ -119,13 +119,32 @@ describe('generateTypstCode sanitization', () => {
 		const payload = '2020, month: 1, day: 1) ; let pwned = eval("1+1") ; datetime(year: 2021-01';
 		const content = contentOf(withOverrides({ workExperience: [oneJob({ startDate: payload })] }));
 		expect(content).not.toContain('pwned');
-		expect(content).toContain('datetime.today()');
+		expect(content).toContain('  "",\n  "Present"');
+		expect(content).not.toContain('datetime.today()');
 	});
 
 	it('rejects an out-of-range month', () => {
 		const content = contentOf(withOverrides({ workExperience: [oneJob({ startDate: '2020-13' })] }));
 		expect(content).not.toContain('month: 13');
-		expect(content).toContain('datetime.today()');
+		expect(content).not.toContain('datetime.today()');
+	});
+
+	it('renders a year-only date as the stated year', () => {
+		const content = contentOf(
+			withOverrides({ workExperience: [oneJob({ startDate: '2019', endDate: '2021', isPresent: false })] }),
+		);
+		expect(content).toContain('"2019"');
+		expect(content).toContain('"2021"');
+		expect(content).not.toContain('datetime.today()');
+	});
+
+	it('renders blank inactive dates as blank values', () => {
+		const content = contentOf(
+			withOverrides({ workExperience: [oneJob({ startDate: '', endDate: '', isPresent: false })] }),
+		);
+		expect(content).toContain('  "",\n  ""');
+		expect(content).not.toContain('datetime.today()');
+		expect(content).not.toContain('"Present"');
 	});
 
 	it('still renders a valid date', () => {
