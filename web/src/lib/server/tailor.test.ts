@@ -117,6 +117,21 @@ describe('buildTailorInput', () => {
 		expect([...a.skills]).toEqual(['s1']);
 	});
 
+	it('offers profile, education, leadership, achievement, project stack, and font targets', () => {
+		const r = resume();
+		r.profile.summary = 'Software engineer.';
+		r.education = [{ id: 'e1', institution: 'University', location: '', degree: 'BS', major: '', startDate: '', endDate: '', isPresent: false, bullets: [] }];
+		r.leadership = [{ id: 'l1', title: 'Lead', organization: 'Club', location: '', startDate: '', endDate: '', isPresent: false, bullets: [] }];
+		r.projects[0] = { id: 'p1', name: 'Tool', stack: 'TypeScript', url: '', award: '', bullets: [] };
+		r.achievements = [{ id: 'a1', title: 'Award', date: '', description: 'Recognized for impact.' }];
+		const { allowed: a } = buildTailorInput(r, occupation);
+
+		expect([...a.bullets]).toEqual(['w1', 'p1', 'e1', 'l1']);
+		expect(a.fields).toEqual(
+			new Set(['profile', 'project-stack:p1', 'achievement-description:a1', 'baseSize', 'nameSize', 'headingSize', 'contactSize']),
+		);
+	});
+
 	it('includes the resume evidence and the O*NET items in the prompt text', () => {
 		const { prompt } = buildTailorInput(resume(), occupation);
 		expect(prompt).toContain('Built an API.'); // existing bullet, so the model can ground its rewrite

@@ -125,7 +125,9 @@ export function applyTailorEdits(
 		const key = target
 			? target.kind === 'experience'
 				? 'workExperience'
-				: 'projects'
+				: target.kind === 'project'
+					? 'projects'
+					: target.kind
 			: next.education.some((entry) => entry.id === edit.targetId)
 				? 'education'
 				: 'leadership';
@@ -148,7 +150,8 @@ export function applyTailorEdits(
 		}
 		const target = bulletTargets(next).find((item) => item.id === highlight.targetId);
 		if (!target) continue;
-		const key = target.kind === 'experience' ? 'workExperience' : 'projects';
+		const key =
+			target.kind === 'experience' ? 'workExperience' : target.kind === 'project' ? 'projects' : target.kind;
 		const entryIndex = next[key].findIndex((entry) => entry.id === highlight.targetId);
 		const shift = removals.filter(
 			(edit) => edit.targetId === highlight.targetId && edit.originalIndex < highlight.index,

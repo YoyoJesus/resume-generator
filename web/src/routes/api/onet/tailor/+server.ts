@@ -56,7 +56,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	const { prompt, allowed } = buildTailorInput(body.resume, occupation);
-	if (allowed.bullets.size === 0 && allowed.skills.size === 0) {
+	if (allowed.bullets.size === 0 && allowed.skills.size === 0 && (allowed.fields?.size ?? 0) === 0) {
 		return json({ edits: [], reason: 'no_targets' });
 	}
 

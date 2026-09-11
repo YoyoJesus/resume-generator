@@ -119,7 +119,7 @@
 		menuFor = null;
 	}
 
-	function insertBullet(kind: 'experience' | 'project', id: string, text: string) {
+	function insertBullet(kind: 'experience' | 'project' | 'education' | 'leadership', id: string, text: string) {
 		const result = appendBullet(data, kind, id, text);
 		data = result.data;
 		applyPaths([result.path]);
@@ -296,7 +296,7 @@
 					<button
 						class="primary mt-3 w-full text-sm disabled:opacity-60"
 						onclick={autoTailor}
-						disabled={tailoring || bulletDests.length + skillDests.length === 0}
+						disabled={tailoring}
 					>
 						{tailoring ? 'Tailoring...' : 'Auto-tailor with AI'}
 					</button>

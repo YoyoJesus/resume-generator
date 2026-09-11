@@ -131,16 +131,6 @@ export function buildTailorInput(
 ): { prompt: string; allowed: AllowedTargets } {
 	const bullets = [
 		...bulletTargets(resume),
-		...resume.education.map((e) => ({
-			id: e.id,
-			kind: 'education' as const,
-			label: `${e.degree} at ${e.institution}`,
-		})),
-		...resume.leadership.map((e) => ({
-			id: e.id,
-			kind: 'leadership' as const,
-			label: `${e.title} at ${e.organization}`,
-		})),
 	];
 	const skills = skillTargets(resume);
 	const fields = resume.profile.summary.trim() ? ['profile'] : [];

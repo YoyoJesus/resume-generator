@@ -106,6 +106,27 @@ describe('applyTailorEdits', () => {
 		expect(removed).toBe(1);
 	});
 
+	it('routes a bullet to an education entry', () => {
+		const before = seed();
+		before.education = [
+			{
+				id: 'e1',
+				institution: 'State University',
+				location: '',
+				degree: 'BS',
+				major: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: [],
+			},
+		];
+		const { data, paths } = applyTailorEdits(before, [bullet('e1', 'Completed relevant coursework.')]);
+
+		expect(data.education[0].bullets).toEqual(['Completed relevant coursework.']);
+		expect(paths).toEqual(['education.0.bullets.0']);
+	});
+
 	it('resolves rewrites against the original snapshot when an earlier bullet is removed', () => {
 		const before = seed();
 		before.workExperience[0].bullets = ['A', 'B', 'C'];
