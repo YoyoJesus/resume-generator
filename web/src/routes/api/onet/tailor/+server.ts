@@ -15,6 +15,7 @@ import {
 import type { ExtractError } from '$lib/server/extraction';
 
 export const prerender = false;
+export const config = { maxDuration: 60 };
 
 // Same { error: { code, message } } envelope the other endpoints use.
 function fail(e: ExtractError): Response {

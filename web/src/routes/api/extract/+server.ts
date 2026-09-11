@@ -15,6 +15,7 @@ import { validateExtractedDocument, type DocumentMetrics } from '$lib/document-q
 
 // This endpoint is dynamic (the root layout sets prerender=true for pages).
 export const prerender = false;
+export const config = { maxDuration: 60 };
 
 function fail(e: ExtractError): Response {
 	return json({ error: { code: e.code, message: e.message } }, { status: e.status });
