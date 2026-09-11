@@ -28,7 +28,7 @@ function seed(): ResumeData {
 				bullets: [],
 			},
 		],
-		projects: [{ id: 'p1', name: 'Resume Builder', stack: '', url: '', award: '', bullets: [] }],
+		projects: [{ id: 'p1', name: 'ResumeSmith', stack: '', url: '', award: '', bullets: [] }],
 		skills: [
 			{ id: 's1', category: 'Languages', skills: 'Python, TypeScript' },
 			{ id: 's2', category: 'Tools', skills: '' },
@@ -41,7 +41,7 @@ describe('bulletTargets', () => {
 		expect(bulletTargets(seed())).toEqual([
 			{ id: 'w1', kind: 'experience', label: 'Software Engineer at Acme' },
 			{ id: 'w2', kind: 'experience', label: 'Intern at Foo' },
-			{ id: 'p1', kind: 'project', label: 'Resume Builder' },
+			{ id: 'p1', kind: 'project', label: 'ResumeSmith' },
 		]);
 	});
 

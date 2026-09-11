@@ -4,8 +4,17 @@
 </script>
 
 <svelte:head>
-	<title>Resume Builder</title>
-	<meta name="description" content="Build professional resumes with customizable Typst templates" />
+	<title>ResumeSmith | Forge a job-ready resume</title>
+	<meta name="application-name" content="ResumeSmith" />
+	<meta
+		name="description"
+		content="Build, tailor, and export a polished resume with privacy-conscious AI assistance and customizable Typst templates."
+	/>
+	<meta property="og:title" content="ResumeSmith" />
+	<meta
+		property="og:description"
+		content="Forge a polished, job-ready resume with live previews, AI-assisted tailoring, and Typst PDF export."
+	/>
 </svelte:head>
 
 {@render children()}

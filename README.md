@@ -1,6 +1,6 @@
-# Resume Generator
+# ResumeSmith
 
-A privacy-conscious resume builder with live Typst rendering, PDF export, AI-assisted resume parsing, O\*NET occupation data, and session-scoped custom templates.
+ResumeSmith is a privacy-conscious resume builder for forging polished, job-ready resumes with live Typst rendering, PDF export, AI-assisted parsing, O\*NET occupation data, and session-scoped custom templates.
 
 [Try the deployed app](https://rg.barknote.top)
 
