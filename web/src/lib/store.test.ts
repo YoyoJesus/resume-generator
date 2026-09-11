@@ -17,7 +17,9 @@ describe('mergeWithDefaults', () => {
 
 	it('deep-merges nested settings and appends newly introduced sections', () => {
 		const merged = mergeWithDefaults({
-			personalInfo: { name: 'Ada' } as Partial<typeof defaultResumeData.personalInfo> as typeof defaultResumeData.personalInfo,
+			personalInfo: { name: 'Ada' } as Partial<
+				typeof defaultResumeData.personalInfo
+			> as typeof defaultResumeData.personalInfo,
 			fonts: { baseSize: 10 } as typeof defaultResumeData.fonts,
 			sectionOrder: ['experience', 'profile'],
 		});

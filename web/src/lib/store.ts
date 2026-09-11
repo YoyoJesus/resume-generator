@@ -8,7 +8,8 @@ export function mergeWithDefaults(saved: Partial<ResumeData>): ResumeData {
 	const defaults = structuredClone(defaultResumeData);
 	const savedOrder = Array.isArray(saved.sectionOrder)
 		? saved.sectionOrder.filter(
-				(id, index): id is SectionId => defaultSectionOrder.includes(id as SectionId) && saved.sectionOrder?.indexOf(id) === index,
+				(id, index): id is SectionId =>
+					defaultSectionOrder.includes(id as SectionId) && saved.sectionOrder?.indexOf(id) === index,
 			)
 		: [];
 	const sectionOrder = [...savedOrder, ...defaultSectionOrder.filter((id) => !savedOrder.includes(id))];
@@ -45,9 +46,9 @@ export function createResumeStore() {
 			if (typeof window !== 'undefined') {
 				try {
 					const saved = window.localStorage.getItem('resumeData');
-				if (saved) {
-					set(mergeWithDefaults(JSON.parse(saved)));
-				}
+					if (saved) {
+						set(mergeWithDefaults(JSON.parse(saved)));
+					}
 				} catch (e) {
 					console.error('Failed to load saved resume data:', e);
 				}
