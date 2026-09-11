@@ -19,7 +19,7 @@ function seed(): ResumeData {
 				bullets: ['Built an API.'],
 			},
 		],
-		projects: [{ id: 'p1', name: 'Resume Smith', stack: '', url: '', award: '', bullets: [] }],
+		projects: [{ id: 'p1', name: 'ResumeSmith', stack: '', url: '', award: '', bullets: [] }],
 		skills: [{ id: 's1', category: 'Languages', skills: 'Python' }],
 	};
 }

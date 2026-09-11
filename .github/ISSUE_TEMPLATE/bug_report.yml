@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem with Resume Smith
+description: Report a reproducible problem with ResumeSmith
 title: "[Bug]: "
 labels:
   - bug

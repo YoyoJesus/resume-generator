@@ -1,6 +1,6 @@
 # Application workspace
 
-This directory contains the deployable SvelteKit application for Resume Smith. See the [project README](../README.md) for features, privacy behavior, setup, template requirements, and Vercel deployment guidance.
+This directory contains the deployable SvelteKit application for ResumeSmith. See the [project README](../README.md) for features, privacy behavior, setup, template requirements, and Vercel deployment guidance.
 
 Run all Node and npm commands from this directory:
 
