@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
 import { mapOpenAIError } from '$lib/server/extraction';
 import { DOCX_TEMPLATE_MAX_LABEL } from '$lib/template-limits';
@@ -49,7 +49,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+		if (!env.OPENAI_API_KEY) return error('auth', 'AI service is misconfigured (API key).', 502);
+		const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 		const response = await client.responses.create({
 			model: TEMPLATE_CONVERSION_MODEL,
 			instructions: TEMPLATE_CONVERSION_PROMPT,

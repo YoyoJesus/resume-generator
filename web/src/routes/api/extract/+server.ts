@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
 import {
 	MODEL,
@@ -43,8 +43,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const gateError = validateExtractedDocument(filename, text);
 	if (gateError) return preflightFailure(gateError);
+	if (!env.OPENAI_API_KEY) return fail(extractError('auth'));
 
-	const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 	const method = ['text', 'ocr', 'hybrid'].includes(metrics?.method ?? '') ? metrics?.method : 'text';
 	const content: OpenAI.Responses.ResponseInputContent[] = [
 		{
