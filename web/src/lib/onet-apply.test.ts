@@ -106,6 +106,29 @@ describe('applyTailorEdits', () => {
 		expect(removed).toBe(1);
 	});
 
+	it('resolves rewrites against the original snapshot when an earlier bullet is removed', () => {
+		const before = seed();
+		before.workExperience[0].bullets = ['A', 'B', 'C'];
+		const { data, paths } = applyTailorEdits(before, [
+			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: '' },
+			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 1, text: 'B2' },
+		]);
+
+		expect(data.workExperience[0].bullets).toEqual(['B2', 'C']);
+		expect(paths).toEqual(['workExperience.0.bullets.0']);
+	});
+
+	it('maps filtered prompt indices back to the original bullet array', () => {
+		const before = seed();
+		before.workExperience[0].bullets = ['A', '', 'C'];
+		const { data, paths } = applyTailorEdits(before, [
+			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 1, text: 'C2' },
+		]);
+
+		expect(data.workExperience[0].bullets).toEqual(['A', '', 'C2']);
+		expect(paths).toEqual(['workExperience.0.bullets.2']);
+	});
+
 	it('applies a validated font size adjustment', () => {
 		const { data, paths } = applyTailorEdits(seed(), [
 			{ kind: 'set_font', targetId: 'baseSize', bulletIndex: -1, text: '8.1' },

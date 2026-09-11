@@ -192,7 +192,7 @@ export function buildTailorInput(
 						resume.projects.find((project) => project.id === target.id) ??
 						resume.education.find((education) => education.id === target.id) ??
 						resume.leadership.find((leadership) => leadership.id === target.id);
-					return [target.id, entry?.bullets.length ?? 0];
+					return [target.id, entry?.bullets.filter(Boolean).length ?? 0];
 				}),
 			),
 		},
