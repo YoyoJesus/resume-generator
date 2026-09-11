@@ -52,6 +52,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 		const response = await client.responses.create({
 			model: MODEL,
+			store: false,
 			input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }] }],
 			reasoning: { effort: 'medium' },
 			text: {
