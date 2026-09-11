@@ -56,3 +56,9 @@ jobs:
 
       - name: Run Svelte and TypeScript checks
         run: npm run check
+
+      - name: Check formatting
+        run: npm run lint
+
+      - name: Build production application
+        run: npm run build
