@@ -8,6 +8,7 @@
 		type CustomTemplate,
 	} from '$lib/template-store';
 	import type { ResumeData } from '$lib/types';
+	import { DOCX_TEMPLATE_MAX_BYTES, DOCX_TEMPLATE_MAX_LABEL } from '$lib/template-limits';
 
 	let {
 		open = $bindable(),
@@ -54,7 +55,9 @@
 			const isDocx = lowerName.endsWith('.docx');
 			if (!isTypst && !isDocx) throw new Error('Choose a Typst (.typ) or Word (.docx) template.');
 			if (isTypst && file.size > MAX_TEMPLATE_SIZE) throw new Error('The Typst template must be 1 MB or smaller.');
-			if (isDocx && file.size > 5 * 1024 * 1024) throw new Error('The DOCX template must be 5 MB or smaller.');
+			if (isDocx && file.size > DOCX_TEMPLATE_MAX_BYTES) {
+				throw new Error(`The DOCX template must be ${DOCX_TEMPLATE_MAX_LABEL} or smaller.`);
+			}
 
 			let template: CustomTemplate;
 			if (isDocx) {
@@ -222,7 +225,7 @@
 					<span class="text-gray-700">Validating and compiling template...</span>
 				{:else}
 					<span class="text-gray-600">Drag a .typ or .docx file here, or click to browse</span>
-					<span class="mt-1 block text-xs text-gray-400">Typst max 1 MB; Word max 5 MB</span>
+					<span class="mt-1 block text-xs text-gray-400">Typst max 1 MB; Word max {DOCX_TEMPLATE_MAX_LABEL}</span>
 				{/if}
 			</button>
 			<input

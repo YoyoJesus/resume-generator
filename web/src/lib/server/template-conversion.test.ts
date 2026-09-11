@@ -4,6 +4,7 @@ import {
 	extractDocxTemplateContext,
 	generateTypstTemplateFromDesign,
 	MAX_OOXML_CONTEXT_CHARS,
+	MAX_OOXML_PART_BYTES,
 	TEMPLATE_CONTENT_MARKER,
 	type TemplateDesign,
 } from './template-conversion';
@@ -55,6 +56,13 @@ describe('DOCX template context extraction', () => {
 		zip.file('word/document.xml', 'x'.repeat(MAX_OOXML_CONTEXT_CHARS + 100));
 		const context = await extractDocxTemplateContext(await zip.generateAsync({ type: 'nodebuffer' }));
 		expect(context.length).toBeLessThan(MAX_OOXML_CONTEXT_CHARS + 100);
+	});
+
+	it('rejects a highly compressed OOXML part before inflating it', async () => {
+		const zip = new JSZip();
+		zip.file('word/document.xml', 'x'.repeat(MAX_OOXML_PART_BYTES + 1));
+		const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+		await expect(extractDocxTemplateContext(buffer)).rejects.toThrow('too large when uncompressed');
 	});
 });
 

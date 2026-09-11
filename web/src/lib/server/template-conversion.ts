@@ -1,9 +1,10 @@
 import JSZip from 'jszip';
+export { DOCX_TEMPLATE_MAX_BYTES } from '$lib/template-limits';
 
 export const TEMPLATE_CONVERSION_MODEL = 'gpt-5.6-luna';
-export const DOCX_TEMPLATE_MAX_BYTES = 5 * 1024 * 1024;
 export const TEMPLATE_CONTENT_MARKER = '// ========== RESUME CONTENT ==========';
 export const MAX_OOXML_CONTEXT_CHARS = 180_000;
+export const MAX_OOXML_PART_BYTES = 1024 * 1024;
 
 const PRIMARY_PARTS = [
 	'word/styles.xml',
@@ -119,6 +120,10 @@ export async function extractDocxTemplateContext(buffer: Buffer): Promise<string
 		if (remaining <= 0) break;
 		const entry = zip.file(path);
 		if (!entry) continue;
+		const uncompressedSize = (entry as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize;
+		if (typeof uncompressedSize === 'number' && uncompressedSize > MAX_OOXML_PART_BYTES) {
+			throw new Error(`DOCX part ${path} is too large when uncompressed.`);
+		}
 		const xml = await entry.async('string');
 		const included = xml.slice(0, remaining);
 		parts.push(`--- ${path} ---\n${included}`);

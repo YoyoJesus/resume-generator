@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { OPENAI_API_KEY } from '$env/static/private';
 import OpenAI from 'openai';
 import { mapOpenAIError } from '$lib/server/extraction';
+import { DOCX_TEMPLATE_MAX_LABEL } from '$lib/template-limits';
 import {
 	DOCX_TEMPLATE_MAX_BYTES,
 	extractDocxTemplateContext,
@@ -35,7 +36,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return error('invalid_file', 'Choose a Word template ending in .docx.', 400);
 	}
 	if (file.size > DOCX_TEMPLATE_MAX_BYTES) {
-		return error('file_too_large', 'The DOCX template must be 5 MB or smaller.', 413);
+		return error('file_too_large', `The DOCX template must be ${DOCX_TEMPLATE_MAX_LABEL} or smaller.`, 413);
 	}
 
 	let buffer: Buffer;
