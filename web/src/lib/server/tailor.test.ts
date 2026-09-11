@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateEdits, MAX_EDITS, buildTailorInput, TAILOR_SCHEMA } from './tailor';
+import { validateEdits, MAX_EDITS, buildTailorInput, isValidTailorResume, TAILOR_SCHEMA } from './tailor';
 import { defaultResumeData } from '$lib/types';
 import type { ResumeData } from '$lib/types';
 import type { OnetOccupation } from '$lib/onet-types';
@@ -132,5 +132,34 @@ describe('buildTailorInput', () => {
 		const { prompt } = buildTailorInput(r, occupation);
 		expect(prompt).not.toContain('secret@example.com');
 		expect(prompt).not.toContain('555-0100');
+	});
+});
+
+describe('isValidTailorResume', () => {
+	it('accepts the complete application resume shape', () => {
+		expect(isValidTailorResume(structuredClone(defaultResumeData))).toBe(true);
+	});
+
+	it('rejects missing arrays before prompt construction', () => {
+		const resume = structuredClone(defaultResumeData) as unknown as Record<string, unknown>;
+		delete resume.education;
+		expect(isValidTailorResume(resume)).toBe(false);
+	});
+
+	it('rejects malformed and oversized bullet fields', () => {
+		const resume = structuredClone(defaultResumeData);
+		resume.workExperience = [
+			{
+				id: 'w1',
+				title: 'Engineer',
+				company: 'Acme',
+				location: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: ['x'.repeat(12_001)],
+			},
+		];
+		expect(isValidTailorResume(resume)).toBe(false);
 	});
 });

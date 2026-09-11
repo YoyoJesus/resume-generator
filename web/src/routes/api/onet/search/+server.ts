@@ -10,7 +10,7 @@ const MAX_KEYWORD = 100;
 export const GET: RequestHandler = async ({ url }) => {
 	const keyword = (url.searchParams.get('keyword') ?? '').trim();
 	if (!keyword) return onetOk({ occupations: [] });
-	if (keyword.length > MAX_KEYWORD) return onetFail(onetError('invalid_code'));
+	if (keyword.length > MAX_KEYWORD) return onetFail(onetError('invalid_query'));
 
 	const key = onetKey();
 	if (!key) return onetFail(onetError('auth'));

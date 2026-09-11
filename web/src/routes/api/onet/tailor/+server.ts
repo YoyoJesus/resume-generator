@@ -5,8 +5,13 @@ import OpenAI from 'openai';
 import { MODEL, mapOpenAIError, extractError } from '$lib/server/extraction';
 import { fetchOccupation, isValidOnetCode, onetError } from '$lib/server/onet';
 import { onetFail, onetKey } from '$lib/server/onet-route';
-import { buildTailorInput, validateEdits, TAILOR_SCHEMA } from '$lib/server/tailor';
-import type { ResumeData } from '$lib/types';
+import {
+	buildTailorInput,
+	isValidTailorResume,
+	MAX_TAILOR_BODY_BYTES,
+	validateEdits,
+	TAILOR_SCHEMA,
+} from '$lib/server/tailor';
 import type { ExtractError } from '$lib/server/extraction';
 
 export const prerender = false;
@@ -19,16 +24,23 @@ function fail(e: ExtractError): Response {
 // Personalised to the caller's resume, so unlike the other O*NET routes this
 // one must not be cached at the edge.
 export const POST: RequestHandler = async ({ request }) => {
-	let body: { resume?: ResumeData; code?: string };
+	const declaredLength = Number(request.headers.get('content-length') ?? 0);
+	if (declaredLength > MAX_TAILOR_BODY_BYTES) return onetFail(onetError('invalid_request', 413));
+
+	let body: { resume?: unknown; code?: unknown };
 	try {
-		body = await request.json();
+		const raw = await request.text();
+		if (new TextEncoder().encode(raw).byteLength > MAX_TAILOR_BODY_BYTES) {
+			return onetFail(onetError('invalid_request', 413));
+		}
+		body = JSON.parse(raw) as { resume?: unknown; code?: unknown };
 	} catch {
-		return onetFail(onetError('invalid_code'));
+		return onetFail(onetError('invalid_request'));
 	}
 
-	const code = body.code ?? '';
+	const code = typeof body.code === 'string' ? body.code : '';
 	if (!isValidOnetCode(code)) return onetFail(onetError('invalid_code'));
-	if (!body.resume || typeof body.resume !== 'object') return onetFail(onetError('invalid_code'));
+	if (!isValidTailorResume(body.resume)) return onetFail(onetError('invalid_request'));
 
 	const key = onetKey();
 	if (!key) return onetFail(onetError('auth'));

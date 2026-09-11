@@ -13,7 +13,15 @@ const BASE = 'https://api-v2.onetcenter.org';
 // Sections are paginated with a default window of 20. Ask for the whole list.
 const PAGE_END = 100;
 
-export type OnetErrorCode = 'invalid_code' | 'not_found' | 'rate_limited' | 'auth' | 'upstream_unavailable' | 'unknown';
+export type OnetErrorCode =
+	| 'invalid_code'
+	| 'invalid_request'
+	| 'invalid_query'
+	| 'not_found'
+	| 'rate_limited'
+	| 'auth'
+	| 'upstream_unavailable'
+	| 'unknown';
 
 export interface OnetError {
 	code: OnetErrorCode;
@@ -23,6 +31,8 @@ export interface OnetError {
 
 const MESSAGES: Record<OnetErrorCode, string> = {
 	invalid_code: "That job code isn't valid.",
+	invalid_request: "That resume request isn't valid.",
+	invalid_query: 'That search keyword is too long.',
 	not_found: 'No O*NET data for that occupation.',
 	rate_limited: 'O*NET is busy right now. Wait a moment and retry.',
 	auth: 'O*NET access is misconfigured (API key).',
@@ -32,6 +42,8 @@ const MESSAGES: Record<OnetErrorCode, string> = {
 
 const STATUSES: Record<OnetErrorCode, number> = {
 	invalid_code: 400,
+	invalid_request: 400,
+	invalid_query: 400,
 	not_found: 404,
 	rate_limited: 429,
 	auth: 502,
