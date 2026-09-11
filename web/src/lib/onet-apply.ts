@@ -150,8 +150,7 @@ export function applyTailorEdits(
 		}
 		const target = bulletTargets(next).find((item) => item.id === highlight.targetId);
 		if (!target) continue;
-		const key =
-			target.kind === 'experience' ? 'workExperience' : target.kind === 'project' ? 'projects' : target.kind;
+		const key = target.kind === 'experience' ? 'workExperience' : target.kind === 'project' ? 'projects' : target.kind;
 		const entryIndex = next[key].findIndex((entry) => entry.id === highlight.targetId);
 		const shift = removals.filter(
 			(edit) => edit.targetId === highlight.targetId && edit.originalIndex < highlight.index,

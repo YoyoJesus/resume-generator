@@ -120,15 +120,46 @@ describe('buildTailorInput', () => {
 	it('offers profile, education, leadership, achievement, project stack, and font targets', () => {
 		const r = resume();
 		r.profile.summary = 'Software engineer.';
-		r.education = [{ id: 'e1', institution: 'University', location: '', degree: 'BS', major: '', startDate: '', endDate: '', isPresent: false, bullets: [] }];
-		r.leadership = [{ id: 'l1', title: 'Lead', organization: 'Club', location: '', startDate: '', endDate: '', isPresent: false, bullets: [] }];
+		r.education = [
+			{
+				id: 'e1',
+				institution: 'University',
+				location: '',
+				degree: 'BS',
+				major: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: [],
+			},
+		];
+		r.leadership = [
+			{
+				id: 'l1',
+				title: 'Lead',
+				organization: 'Club',
+				location: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: [],
+			},
+		];
 		r.projects[0] = { id: 'p1', name: 'Tool', stack: 'TypeScript', url: '', award: '', bullets: [] };
 		r.achievements = [{ id: 'a1', title: 'Award', date: '', description: 'Recognized for impact.' }];
 		const { allowed: a } = buildTailorInput(r, occupation);
 
 		expect([...a.bullets]).toEqual(['w1', 'p1', 'e1', 'l1']);
 		expect(a.fields).toEqual(
-			new Set(['profile', 'project-stack:p1', 'achievement-description:a1', 'baseSize', 'nameSize', 'headingSize', 'contactSize']),
+			new Set([
+				'profile',
+				'project-stack:p1',
+				'achievement-description:a1',
+				'baseSize',
+				'nameSize',
+				'headingSize',
+				'contactSize',
+			]),
 		);
 	});
 

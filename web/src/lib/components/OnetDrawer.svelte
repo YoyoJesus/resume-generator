@@ -331,11 +331,7 @@
 						purple so you can reword it.
 					</p>
 
-					<button
-						class="primary mt-3 w-full text-sm disabled:opacity-60"
-						onclick={autoTailor}
-						disabled={tailoring}
-					>
+					<button class="primary mt-3 w-full text-sm disabled:opacity-60" onclick={autoTailor} disabled={tailoring}>
 						{tailoring ? 'Tailoring...' : 'Auto-tailor with AI'}
 					</button>
 					<p class="mt-1 text-xs text-gray-500">

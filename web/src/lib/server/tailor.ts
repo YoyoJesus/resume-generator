@@ -52,10 +52,25 @@ export function isValidTailorResume(value: unknown): value is ResumeData {
 		objectFields(value.personalInfo, ['name', 'phone', 'location', 'email', 'website', 'linkedin', 'github']) &&
 		objectFields(value.profile, ['summary']) &&
 		entries(value.clearance, ['id', 'level', 'status', 'dateGranted']) &&
-		entries(value.education, ['id', 'institution', 'location', 'degree', 'major', 'startDate', 'endDate'], ['isPresent'], true) &&
+		entries(
+			value.education,
+			['id', 'institution', 'location', 'degree', 'major', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) &&
 		entries(value.projects, ['id', 'name', 'stack', 'url', 'award'], [], true) &&
-		entries(value.workExperience, ['id', 'title', 'company', 'location', 'startDate', 'endDate'], ['isPresent'], true) &&
-		entries(value.leadership, ['id', 'title', 'organization', 'location', 'startDate', 'endDate'], ['isPresent'], true) &&
+		entries(
+			value.workExperience,
+			['id', 'title', 'company', 'location', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) &&
+		entries(
+			value.leadership,
+			['id', 'title', 'organization', 'location', 'startDate', 'endDate'],
+			['isPresent'],
+			true,
+		) &&
 		entries(value.skills, ['id', 'category', 'skills']) &&
 		entries(value.achievements, ['id', 'title', 'date', 'description']) &&
 		objectFields(value.colors, ['headColor', 'textColor', 'accentColor', 'linkColor']) &&
@@ -129,9 +144,7 @@ export function buildTailorInput(
 	resume: ResumeData,
 	occupation: OnetOccupation,
 ): { prompt: string; allowed: AllowedTargets } {
-	const bullets = [
-		...bulletTargets(resume),
-	];
+	const bullets = [...bulletTargets(resume)];
 	const skills = skillTargets(resume);
 	const fields = resume.profile.summary.trim() ? ['profile'] : [];
 	const fontBounds = 'baseSize=6-14, nameSize=14-32, headingSize=10-24, contactSize=7-16';
