@@ -8,9 +8,9 @@ import {
 	EXTRACTION_PROMPT,
 	mapOpenAIError,
 	extractError,
+	validateExtractedResume,
 	type ExtractError,
 } from '$lib/server/extraction';
-import type { ExtractedResume } from '$lib/types';
 import { validateExtractedDocument, type DocumentMetrics } from '$lib/document-quality';
 
 // This endpoint is dynamic (the root layout sets prerender=true for pages).
@@ -72,23 +72,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		const raw = response.output_text;
 		if (!raw) return fail(extractError('parse_failed'));
 
-		const data = JSON.parse(raw) as ExtractedResume;
+		const data = validateExtractedResume(JSON.parse(raw));
+		if (!data) return fail(extractError('parse_failed'));
 		return json({ data });
 	} catch (err) {
-		console.error(
-			'OPENAI_DEBUG',
-			JSON.stringify(
-				{
-					name: (err as any)?.name,
-					status: (err as any)?.status,
-					code: (err as any)?.code,
-					message: (err as any)?.message,
-					error: (err as any)?.error,
-				},
-				null,
-				2,
-			),
-		);
+		const detail = err as { status?: unknown; code?: unknown };
+		console.error('OpenAI extraction failed', { status: detail?.status, code: detail?.code });
 		// SyntaxError from JSON.parse -> parse_failed; otherwise map the OpenAI/network error.
 		if (err instanceof SyntaxError) return fail(extractError('parse_failed'));
 		return fail(mapOpenAIError(err));
