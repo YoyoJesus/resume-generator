@@ -1,4 +1,4 @@
-// Example custom template for Resume Builder.
+// Example custom template for Resume Smith.
 // Upload this file with the "Upload Template" button.
 
 #let ink = rgb("183153")
@@ -148,4 +148,4 @@
 }
 
 // ========== RESUME CONTENT ==========
-// The Resume Builder replaces everything after the marker above.
+// Resume Smith replaces everything after the marker above.

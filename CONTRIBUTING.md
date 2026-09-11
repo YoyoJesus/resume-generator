@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Resume Generator. Contributions involving document uploads, AI processing, or generated PDFs
+Thanks for helping improve Resume Smith. Contributions involving document uploads, AI processing, or generated PDFs
 deserve particular care because they affect user privacy, API cost, and document correctness.
 
 By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

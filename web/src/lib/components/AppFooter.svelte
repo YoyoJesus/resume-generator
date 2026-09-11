@@ -51,7 +51,7 @@
 		</div>
 
 		<p class="shrink-0">
-			{new Date().getFullYear()} Resume Builder -
+			{new Date().getFullYear()} Resume Smith -
 			<a href="https://asternberg.xyz" target="_blank" rel="noopener noreferrer" class="hover:text-gray-700"
 				>Austin Sternberg</a
 			>
