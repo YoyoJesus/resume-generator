@@ -13,6 +13,7 @@ import {
 	TAILOR_SCHEMA,
 } from '$lib/server/tailor';
 import type { ExtractError } from '$lib/server/extraction';
+import { readBoundedBody, RequestBodyTooLargeError } from '$lib/server/bounded-body';
 
 export const prerender = false;
 export const config = { maxDuration: 60 };
@@ -28,14 +29,15 @@ export const POST: RequestHandler = async ({ request }) => {
 	const declaredLength = Number(request.headers.get('content-length') ?? 0);
 	if (declaredLength > MAX_TAILOR_BODY_BYTES) return onetFail(onetError('invalid_request', 413));
 
-	let body: { resume?: unknown; code?: unknown };
+	let body: Record<string, unknown>;
 	try {
-		const raw = await request.text();
-		if (new TextEncoder().encode(raw).byteLength > MAX_TAILOR_BODY_BYTES) {
-			return onetFail(onetError('invalid_request', 413));
+		const parsed: unknown = JSON.parse(await readBoundedBody(request, MAX_TAILOR_BODY_BYTES));
+		if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+			return onetFail(onetError('invalid_request'));
 		}
-		body = JSON.parse(raw) as { resume?: unknown; code?: unknown };
-	} catch {
+		body = parsed as Record<string, unknown>;
+	} catch (error) {
+		if (error instanceof RequestBodyTooLargeError) return onetFail(onetError('invalid_request', 413));
 		return onetFail(onetError('invalid_request'));
 	}
 

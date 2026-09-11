@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import type { Readable } from 'node:stream';
 export { DOCX_TEMPLATE_MAX_BYTES } from '$lib/template-limits';
 
 export const TEMPLATE_CONVERSION_MODEL = 'gpt-5.6-luna';
@@ -107,6 +108,33 @@ function isUsefulPart(path: string): boolean {
 	);
 }
 
+async function readBoundedPart(entry: JSZip.JSZipObject, path: string): Promise<string> {
+	const stream = entry.nodeStream('nodebuffer') as Readable;
+	return new Promise((resolve, reject) => {
+		const chunks: Buffer[] = [];
+		let size = 0;
+		let settled = false;
+		stream.on('data', (chunk: Buffer | Uint8Array) => {
+			if (settled) return;
+			const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+			size += bytes.byteLength;
+			if (size > MAX_OOXML_PART_BYTES) {
+				settled = true;
+				stream.destroy();
+				reject(new Error(`DOCX part ${path} is too large when uncompressed.`));
+				return;
+			}
+			chunks.push(bytes);
+		});
+		stream.on('end', () => {
+			if (!settled) resolve(Buffer.concat(chunks, size).toString('utf8'));
+		});
+		stream.on('error', (error) => {
+			if (!settled) reject(error);
+		});
+	});
+}
+
 /** Extracts a bounded set of layout-relevant OOXML parts from a DOCX archive. */
 export async function extractDocxTemplateContext(buffer: Buffer): Promise<string> {
 	const zip = await JSZip.loadAsync(buffer);
@@ -124,7 +152,7 @@ export async function extractDocxTemplateContext(buffer: Buffer): Promise<string
 		if (typeof uncompressedSize === 'number' && uncompressedSize > MAX_OOXML_PART_BYTES) {
 			throw new Error(`DOCX part ${path} is too large when uncompressed.`);
 		}
-		const xml = await entry.async('string');
+		const xml = await readBoundedPart(entry, path);
 		const included = xml.slice(0, remaining);
 		parts.push(`--- ${path} ---\n${included}`);
 		remaining -= included.length;

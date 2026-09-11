@@ -119,7 +119,8 @@ describe('generateTypstCode sanitization', () => {
 		const payload = '2020, month: 1, day: 1) ; let pwned = eval("1+1") ; datetime(year: 2021-01';
 		const content = contentOf(withOverrides({ workExperience: [oneJob({ startDate: payload })] }));
 		expect(content).not.toContain('pwned');
-		expect(content).toContain('""');
+		expect(content).toContain('  "",\n  "Present"');
+		expect(content).not.toContain('datetime.today()');
 	});
 
 	it('rejects an out-of-range month', () => {

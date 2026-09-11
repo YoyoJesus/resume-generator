@@ -106,6 +106,41 @@ describe('applyTailorEdits', () => {
 		expect(removed).toBe(1);
 	});
 
+	it('deduplicates removals that resolve to the same original bullet', () => {
+		const before = seed();
+		before.workExperience[0].bullets = ['A', 'B'];
+		const { data, removed } = applyTailorEdits(before, [
+			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: '' },
+			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: 'duplicate rationale' },
+		]);
+
+		expect(data.workExperience[0].bullets).toEqual(['B']);
+		expect(removed).toBe(1);
+	});
+
+	it('rewrites education bullets using their original indices', () => {
+		const before = seed();
+		before.education = [
+			{
+				id: 'e1',
+				institution: 'State University',
+				location: '',
+				degree: 'BS',
+				major: '',
+				startDate: '',
+				endDate: '',
+				isPresent: false,
+				bullets: ['Original'],
+			},
+		];
+		const { data, paths } = applyTailorEdits(before, [
+			{ kind: 'rewrite_bullet', targetId: 'e1', bulletIndex: 0, text: 'Rewritten' },
+		]);
+
+		expect(data.education[0].bullets).toEqual(['Rewritten']);
+		expect(paths).toEqual(['education.0.bullets.0']);
+	});
+
 	it('routes a bullet to an education entry', () => {
 		const before = seed();
 		before.education = [

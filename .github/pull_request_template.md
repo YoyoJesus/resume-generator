@@ -25,4 +25,6 @@
 - [ ] I reviewed the diff for unrelated generated or formatting changes.
 - [ ] If an AI agent prepared this PR, I added its provider, model, and harness footer below.
 
-<!-- AI-authored PRs must end with: Agent provider, Agent model, and Agent harness. Remove this comment. -->
+AI assistance: no
+
+<!-- AI agents: change the declaration to "yes" and end the PR with Agent provider, Agent model, and Agent harness. -->

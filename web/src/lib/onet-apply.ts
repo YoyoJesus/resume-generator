@@ -26,11 +26,17 @@ export function applyTailorEdits(
 		}
 	}
 
-	const removals = edits
-		.filter((edit) => edit.kind === 'remove_bullet')
-		.map((edit) => ({ ...edit, originalIndex: bulletPositions.get(edit.targetId)?.[edit.bulletIndex] }))
-		.filter((edit): edit is typeof edit & { originalIndex: number } => edit.originalIndex !== undefined)
-		.sort((a, b) => (a.targetId === b.targetId ? b.originalIndex - a.originalIndex : 0));
+	const removals = new Map<string, TailorEdit & { kind: 'remove_bullet'; originalIndex: number }>();
+	for (const edit of edits) {
+		if (edit.kind !== 'remove_bullet') continue;
+		const originalIndex = bulletPositions.get(edit.targetId)?.[edit.bulletIndex];
+		if (originalIndex === undefined) continue;
+		removals.set(`${edit.targetId}:${originalIndex}`, { ...edit, kind: 'remove_bullet', originalIndex });
+	}
+	const sortedRemovals = [...removals.values()].sort((a, b) =>
+		a.targetId === b.targetId ? b.originalIndex - a.originalIndex : 0,
+	);
+	const appliedRemovals: typeof sortedRemovals = [];
 
 	for (const edit of edits.filter((item) => item.kind !== 'remove_bullet')) {
 		if (edit.kind === 'set_font') {
@@ -94,7 +100,9 @@ export function applyTailorEdits(
 		const key = target
 			? target.kind === 'experience'
 				? 'workExperience'
-				: 'projects'
+				: target.kind === 'project'
+					? 'projects'
+					: target.kind
 			: other
 				? next.education.some((e) => e.id === other.id)
 					? 'education'
@@ -116,7 +124,7 @@ export function applyTailorEdits(
 		bulletHighlights.push({ targetId: edit.targetId, index: originalIndex });
 	}
 
-	for (const edit of removals) {
+	for (const edit of sortedRemovals) {
 		const target = bulletTargets(next).find((item) => item.id === edit.targetId);
 		const other =
 			next.education.find((entry) => entry.id === edit.targetId) ??
@@ -142,17 +150,20 @@ export function applyTailorEdits(
 		};
 		next = { ...next, [key]: updated };
 		removed++;
+		appliedRemovals.push(edit);
 	}
 
 	for (const highlight of bulletHighlights) {
-		if (removals.some((edit) => edit.targetId === highlight.targetId && edit.originalIndex === highlight.index)) {
+		if (
+			appliedRemovals.some((edit) => edit.targetId === highlight.targetId && edit.originalIndex === highlight.index)
+		) {
 			continue;
 		}
 		const target = bulletTargets(next).find((item) => item.id === highlight.targetId);
 		if (!target) continue;
 		const key = target.kind === 'experience' ? 'workExperience' : target.kind === 'project' ? 'projects' : target.kind;
 		const entryIndex = next[key].findIndex((entry) => entry.id === highlight.targetId);
-		const shift = removals.filter(
+		const shift = appliedRemovals.filter(
 			(edit) => edit.targetId === highlight.targetId && edit.originalIndex < highlight.index,
 		).length;
 		paths.push(`${key}.${entryIndex}.bullets.${highlight.index - shift}`);

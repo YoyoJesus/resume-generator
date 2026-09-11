@@ -28,6 +28,16 @@ const DESIGN: TemplateDesign = {
 	showHeaderRule: true,
 };
 
+function underreportUncompressedSize(buffer: Buffer): Buffer {
+	const patched = Buffer.from(buffer);
+	for (let offset = 0; offset <= patched.length - 28; offset++) {
+		const signature = patched.readUInt32LE(offset);
+		if (signature === 0x04034b50) patched.writeUInt32LE(1, offset + 22);
+		if (signature === 0x02014b50) patched.writeUInt32LE(1, offset + 24);
+	}
+	return patched;
+}
+
 describe('DOCX template context extraction', () => {
 	it('includes document, style, and header XML while excluding unrelated files', async () => {
 		const zip = new JSZip();
@@ -63,6 +73,16 @@ describe('DOCX template context extraction', () => {
 		zip.file('word/document.xml', 'x'.repeat(MAX_OOXML_PART_BYTES + 1));
 		const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 		await expect(extractDocxTemplateContext(buffer)).rejects.toThrow('too large when uncompressed');
+	});
+
+	it('stops inflating when ZIP metadata under-reports the output size', async () => {
+		const zip = new JSZip();
+		zip.file('word/document.xml', 'x'.repeat(MAX_OOXML_PART_BYTES + 1));
+		const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+
+		await expect(extractDocxTemplateContext(underreportUncompressedSize(buffer))).rejects.toThrow(
+			'too large when uncompressed',
+		);
 	});
 });
 

@@ -38,8 +38,13 @@
 	$effect(() => {
 		if (!open) return;
 		const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-		void tick().then(() => (searchInput ?? drawer)?.focus());
 		return () => opener?.focus();
+	});
+
+	$effect(() => {
+		if (!open) return;
+		const showingOccupation = occupation !== null;
+		void tick().then(() => (showingOccupation ? drawer : (searchInput ?? drawer))?.focus());
 	});
 
 	async function readError(res: Response): Promise<string> {

@@ -87,3 +87,5 @@ Agent provider: <provider>
 Agent model: <model>
 Agent harness: <harness>
 ```
+
+Human-authored pull requests should retain `AI assistance: no` from the pull request template. Human-authored issues should enter `Not AI-generated` in the required attribution field. Repository automation validates either declaration and rejects partial or malformed AI footers.

@@ -1,0 +1,22 @@
+name: Attribution
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  pull_request_target:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate AI attribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out validator
+        uses: actions/checkout@v4
+
+      - name: Validate submission declaration
+        run: node .github/scripts/check-agent-attribution.mjs
