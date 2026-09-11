@@ -1,4 +1,5 @@
 import { $typst } from '@myriaddreamin/typst.ts';
+import { downloadBlob } from './browser-download';
 
 let initPromise: Promise<void> | null = null;
 let initError: Error | null = null;
@@ -58,10 +59,5 @@ export async function compileToSvg(typstCode: string): Promise<string> {
 
 export function downloadPdf(pdfData: Uint8Array, filename: string = 'resume.pdf'): void {
 	const blob = new Blob([new Uint8Array(pdfData)], { type: 'application/pdf' });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = filename;
-	a.click();
-	URL.revokeObjectURL(url);
+	downloadBlob(blob, filename);
 }

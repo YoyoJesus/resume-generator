@@ -9,6 +9,7 @@
 	} from '$lib/template-store';
 	import type { ResumeData } from '$lib/types';
 	import { DOCX_TEMPLATE_MAX_BYTES, DOCX_TEMPLATE_MAX_LABEL } from '$lib/template-limits';
+	import { downloadBlob } from '$lib/browser-download';
 
 	let {
 		open = $bindable(),
@@ -116,12 +117,7 @@
 
 	function downloadStarterTemplate() {
 		const blob = new Blob([generateTypstCode(data)], { type: 'text/plain;charset=utf-8' });
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement('a');
-		anchor.href = url;
-		anchor.download = 'resume-template.typ';
-		anchor.click();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, 'resume-template.typ');
 	}
 
 	function onDialogKeydown(event: KeyboardEvent) {
