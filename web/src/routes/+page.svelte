@@ -8,6 +8,7 @@
 	import { defaultResumeData } from '$lib/types';
 	import { estimateOverOnePage } from '$lib/resume-utils';
 	import { customTemplateStore, type CustomTemplate } from '$lib/template-store';
+	import { createPreviewScheduler } from '$lib/preview-scheduler';
 
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import UploadModal from '$lib/components/UploadModal.svelte';
@@ -42,29 +43,21 @@
 	let templateOpen = $state(false);
 	let tailorOpen = $state(false);
 	let showReviewBanner = $state(false);
-	let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
-	let previewRequest = 0;
 	let estimatedOverOnePage = $derived(estimateOverOnePage(data));
 	let compiledPageCount = $derived(preview?.pages.length ?? null);
 
-	async function updatePreview(code: string) {
-		const requestId = ++previewRequest;
-		isPreviewLoading = true;
-		try {
-			const compiled = await compileToPreview(code);
-			if (requestId === previewRequest) preview = compiled;
-		} catch (err) {
-			console.error('SVG preview failed:', err);
-		} finally {
-			if (requestId === previewRequest) isPreviewLoading = false;
-		}
-	}
+	const previewScheduler = createPreviewScheduler(compileToPreview, {
+		onInvalidate: () => {
+			preview = null;
+			isPreviewLoading = true;
+		},
+		onResult: (compiled) => (preview = compiled),
+		onError: (error) => console.error('SVG preview failed:', error),
+		onSettled: () => (isPreviewLoading = false),
+	});
 
 	$effect(() => {
-		const code = typstCode;
-		clearTimeout(previewDebounceTimer);
-		previewDebounceTimer = setTimeout(() => updatePreview(code), 300);
-		return () => clearTimeout(previewDebounceTimer);
+		previewScheduler.schedule(typstCode);
 	});
 
 	onMount(() => {
@@ -77,10 +70,9 @@
 		const unsubTemplate = customTemplateStore.subscribe((value) => {
 			customTemplate = value;
 		});
-		initCompiler()
-			.then(() => updatePreview(typstCode))
-			.catch(console.error);
+		initCompiler().catch(console.error);
 		return () => {
+			previewScheduler.dispose();
 			unsub();
 			unsubTemplate();
 		};

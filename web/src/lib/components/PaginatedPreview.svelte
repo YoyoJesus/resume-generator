@@ -3,6 +3,7 @@
 
 	let { preview }: { preview: CompiledPreview } = $props();
 	let pageSvgs = $state<string[]>([]);
+	let pageIndex = $state(0);
 
 	function splitPages({ svg, pages }: CompiledPreview): string[] {
 		if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') return [];
@@ -42,21 +43,36 @@
 
 	$effect(() => {
 		pageSvgs = splitPages(preview);
+		pageIndex = 0;
 	});
 </script>
 
-{#if pageSvgs.length === preview.pages.length}
-	<div class="flex w-full flex-col items-center gap-4" aria-label={`${pageSvgs.length}-page resume preview`}>
-		{#each pageSvgs as pageSvg, index}
-			<figure class="m-0 w-full max-w-[510px]">
-				<div class="resume-page overflow-hidden bg-white shadow-lg">
-					{@html pageSvg}
-				</div>
-				<figcaption class="mt-1 text-center text-xs text-gray-200">
-					Page {index + 1} of {pageSvgs.length}
-				</figcaption>
-			</figure>
-		{/each}
+{#if pageSvgs.length > 0 && pageSvgs.length === preview.pages.length}
+	<div class="flex w-full flex-col items-center gap-3" aria-label={`${pageSvgs.length}-page resume preview`}>
+		{#if pageSvgs.length > 1}
+			<nav class="flex w-full max-w-[510px] items-center justify-between gap-3" aria-label="Preview pages">
+				<button
+					class="secondary px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+					onclick={() => (pageIndex -= 1)}
+					disabled={pageIndex === 0}
+					aria-label="Previous preview page">← Previous</button
+				>
+				<span class="text-sm font-medium text-white" aria-live="polite">
+					Page {pageIndex + 1} of {pageSvgs.length}
+				</span>
+				<button
+					class="secondary px-3 py-1 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+					onclick={() => (pageIndex += 1)}
+					disabled={pageIndex === pageSvgs.length - 1}
+					aria-label="Next preview page">Next →</button
+				>
+			</nav>
+		{/if}
+		<figure class="m-0 w-full max-w-[510px]" aria-label={`Resume page ${pageIndex + 1}`}>
+			<div class="resume-page overflow-hidden bg-white shadow-lg">
+				{@html pageSvgs[pageIndex]}
+			</div>
+		</figure>
 	</div>
 {:else}
 	<div class="resume-page w-full max-w-[510px] overflow-hidden bg-white shadow-lg">
