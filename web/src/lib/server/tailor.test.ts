@@ -7,6 +7,7 @@ import {
 	TAILOR_SCHEMA,
 	MAX_FIELD_CHARS,
 	MAX_SKILL_CHARS,
+	isValidCompiledPageCount,
 } from './tailor';
 import { defaultResumeData } from '$lib/types';
 import type { ResumeData } from '$lib/types';
@@ -210,6 +211,29 @@ describe('buildTailorInput', () => {
 		const { prompt } = buildTailorInput(r, occupation);
 		expect(prompt).not.toContain('secret@example.com');
 		expect(prompt).not.toContain('555-0100');
+	});
+
+	it('uses the compiled page count instead of the content estimate', () => {
+		expect(buildTailorInput(resume(), occupation, 2).prompt).toContain('compiled document exceeds one page');
+
+		const estimatedLong = resume();
+		estimatedLong.workExperience[0].bullets = Array.from({ length: 60 }, () => 'A concise bullet.');
+		expect(buildTailorInput(estimatedLong, occupation, 1).prompt).toContain('within the one-page target');
+	});
+
+	it.each([0, -1, 1.5, 101, null, '2'])('falls back to the estimate for invalid page count %p', (pageCount) => {
+		const { prompt } = buildTailorInput(resume(), occupation, pageCount);
+		expect(prompt).toContain('within the one-page target');
+	});
+});
+
+describe('isValidCompiledPageCount', () => {
+	it.each([1, 2, 100])('accepts bounded integer page count %p', (pageCount) => {
+		expect(isValidCompiledPageCount(pageCount)).toBe(true);
+	});
+
+	it.each([0, -1, 1.5, 101, null, '2', undefined])('rejects invalid page count %p', (pageCount) => {
+		expect(isValidCompiledPageCount(pageCount)).toBe(false);
 	});
 });
 

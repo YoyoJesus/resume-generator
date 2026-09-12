@@ -7,6 +7,7 @@ import { estimateOverOnePage } from '$lib/resume-utils';
 // rewrite the whole resume in a single pass.
 export const MAX_EDITS = 12;
 export const MAX_TAILOR_BODY_BYTES = 200_000;
+export const MAX_COMPILED_PAGE_COUNT = 100;
 
 const MAX_ITEMS = 100;
 export const MAX_FIELD_CHARS = 12_000;
@@ -30,6 +31,10 @@ function objectFields(value: unknown, strings: string[], booleans: string[] = []
 
 function numericFields(value: unknown, keys: string[]): boolean {
 	return record(value) && keys.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]));
+}
+
+export function isValidCompiledPageCount(value: unknown): value is number {
+	return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= MAX_COMPILED_PAGE_COUNT;
 }
 
 function entries(value: unknown, strings: string[], booleans: string[] = [], bullets = false): boolean {
@@ -144,13 +149,16 @@ function scaleLines(label: string, items: { name: string }[]): string[] {
 export function buildTailorInput(
 	resume: ResumeData,
 	occupation: OnetOccupation,
+	compiledPageCount?: unknown,
 ): { prompt: string; hasTargets: boolean; allowed: AllowedTargets } {
 	const bullets = [...bulletTargets(resume)];
 	const skills = skillTargets(resume);
 	const fields = resume.profile.summary.trim() ? ['profile'] : [];
 	const fontBounds = 'baseSize=6-14, nameSize=14-32, headingSize=10-24, contactSize=7-16';
 
-	const isOverOnePage = estimateOverOnePage(resume);
+	const isOverOnePage = isValidCompiledPageCount(compiledPageCount)
+		? compiledPageCount > 1
+		: estimateOverOnePage(resume);
 	const lines: string[] = [
 		TAILOR_PROMPT,
 		'',
@@ -159,7 +167,7 @@ export function buildTailorInput(
 			.join(', ')}`,
 		'',
 		isOverOnePage
-			? '=== LENGTH MODE ===\nThe output must fit on exactly one side of one A4 page. This resume is estimated to exceed one page. Do not add content unless it replaces more text. Prioritize concise rewrites, removals, and font-size reductions for generic, repetitive, or least relevant content until it fits.'
+			? '=== LENGTH MODE ===\nThe output must fit on exactly one side of one A4 page. The compiled document exceeds one page. Do not add content unless it replaces more text. Prioritize concise rewrites, removals, and font-size reductions for generic, repetitive, or least relevant content until it fits.'
 			: '=== LENGTH MODE ===\nThis resume is within the one-page target. Make concrete, grounded improvements; use add_bullet only when it adds job-relevant evidence not already stated.',
 		'',
 		'=== TARGETS: all resume entries (bullet kinds) ===',

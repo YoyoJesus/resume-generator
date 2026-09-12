@@ -1,13 +1,16 @@
 <script lang="ts">
+	import type { CompiledPreview } from '$lib/pdf-compiler';
+	import PaginatedPreview from './PaginatedPreview.svelte';
+
 	let {
 		showCode,
 		typstCode,
-		svgPreview,
+		preview,
 		isPreviewLoading,
 	}: {
 		showCode: boolean;
 		typstCode: string;
-		svgPreview: string;
+		preview: CompiledPreview | null;
 		isPreviewLoading: boolean;
 	} = $props();
 
@@ -17,27 +20,28 @@
 </script>
 
 <div
-	class="bg-gray-500 rounded-lg shadow p-4 flex flex-col items-center overflow-auto max-h-[calc(100vh-10rem)] lg:max-h-none lg:h-full"
+	class="flex h-[calc(100vh-10rem)] flex-col items-center overflow-hidden rounded-lg bg-gray-500 p-4 shadow lg:h-full"
 >
 	<h2 class="text-lg font-semibold mb-4 text-white">
-		{showCode ? 'Typst Code' : 'Resume Preview'}
+		{showCode
+			? 'Typst Code'
+			: `Resume Preview${preview ? ` · ${preview.pages.length} ${preview.pages.length === 1 ? 'page' : 'pages'}` : ''}`}
 	</h2>
 
 	{#if showCode}
-		<div class="relative w-full">
+		<div class="relative min-h-0 w-full flex-1">
 			<button class="absolute top-2 right-2 secondary text-xs" onclick={copyToClipboard}>Copy</button>
-			<pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto max-h-[calc(100vh-16rem)] text-xs w-full"><code
-					>{typstCode}</code
+			<pre class="h-full w-full overflow-auto rounded-lg bg-gray-900 p-4 text-xs text-gray-100"><code>{typstCode}</code
 				></pre>
 		</div>
 	{:else}
-		<div class="bg-white shadow-lg overflow-hidden resume-preview" style="width: 100%; max-width: 510px;">
-			{#if isPreviewLoading && !svgPreview}
+		<div class="flex min-h-0 w-full flex-1 justify-center">
+			{#if isPreviewLoading && !preview}
 				<div class="flex items-center justify-center h-full text-gray-400">
 					<span>Compiling preview...</span>
 				</div>
-			{:else if svgPreview}
-				{@html svgPreview}
+			{:else if preview}
+				<PaginatedPreview {preview} />
 			{:else}
 				<div class="flex items-center justify-center h-full text-gray-400">
 					<span>Preview will appear here</span>
@@ -46,10 +50,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	.resume-preview :global(svg) {
-		width: 100%;
-		height: auto;
-	}
-</style>

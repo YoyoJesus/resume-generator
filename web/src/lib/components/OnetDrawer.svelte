@@ -13,8 +13,9 @@
 	let {
 		open = $bindable(),
 		data = $bindable(),
+		pageCount = null,
 		onInserted,
-	}: { open: boolean; data: ResumeData; onInserted: () => void } = $props();
+	}: { open: boolean; data: ResumeData; pageCount?: number | null; onInserted: () => void } = $props();
 
 	let query = $state('');
 	let results = $state<OnetOccupationRef[]>([]);
@@ -176,7 +177,7 @@
 			const res = await fetch('/api/onet/tailor', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ resume: submitted, code: occupation.code }),
+				body: JSON.stringify({ resume: submitted, code: occupation.code, pageCount }),
 				signal: controller.signal,
 			});
 			if (requestId !== tailorRequest) return;
