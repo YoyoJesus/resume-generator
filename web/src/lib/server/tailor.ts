@@ -9,7 +9,8 @@ export const MAX_EDITS = 12;
 export const MAX_TAILOR_BODY_BYTES = 200_000;
 
 const MAX_ITEMS = 100;
-const MAX_FIELD_CHARS = 12_000;
+export const MAX_FIELD_CHARS = 12_000;
+export const MAX_SKILL_CHARS = 80;
 
 function record(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -101,7 +102,7 @@ export const TAILOR_PROMPT = [
 	'',
 	`Return at most ${MAX_EDITS} edits.`,
 	'Every targetId MUST be copied exactly from the target lists below; never invent one.',
-	'Use kind "add_bullet" to add a grounded bullet, "rewrite_bullet" to improve an existing bullet, "remove_bullet" to remove an existing bullet, "rewrite_field" to tailor an explicitly listed profile, project, education, leadership, or achievement field, "set_font" to adjust one listed font size, or "skill" with a skill category id.',
+	'Use kind "add_bullet" to add a grounded bullet, "rewrite_bullet" to improve an existing bullet, "remove_bullet" to remove an existing bullet, "rewrite_field" to tailor an explicitly listed profile, project-stack:<id>, or achievement-description:<id> field, "set_font" to adjust one listed font size, or "skill" with a skill category id.',
 	'For rewrite_bullet and remove_bullet, bulletIndex MUST be the zero-based index shown beside that bullet. For add_bullet and skill, bulletIndex MUST be -1.',
 	'For rewrite_field and set_font, bulletIndex MUST be -1. set_font text MUST be a numeric point size within the listed bounds, and should be used to help an overlong resume fit one page.',
 	'A "skill" edit\'s text must be a short skill or technology name, not a sentence.',
@@ -143,7 +144,7 @@ function scaleLines(label: string, items: { name: string }[]): string[] {
 export function buildTailorInput(
 	resume: ResumeData,
 	occupation: OnetOccupation,
-): { prompt: string; allowed: AllowedTargets } {
+): { prompt: string; hasTargets: boolean; allowed: AllowedTargets } {
 	const bullets = [...bulletTargets(resume)];
 	const skills = skillTargets(resume);
 	const fields = resume.profile.summary.trim() ? ['profile'] : [];
@@ -243,6 +244,8 @@ export function buildTailorInput(
 
 	return {
 		prompt: lines.join('\n'),
+		// Font controls are always offered, so they never count as something to tailor.
+		hasTargets: bullets.length > 0 || skills.length > 0 || fields.length > 0,
 		allowed: {
 			bullets: new Set(bullets.map((b) => b.id)),
 			skills: new Set(skills.map((s) => s.id)),
@@ -292,6 +295,7 @@ export function validateEdits(raw: unknown, allowed: AllowedTargets): TailorEdit
 		)
 			continue;
 
+		if (text.length > (kind === 'skill' ? MAX_SKILL_CHARS : MAX_FIELD_CHARS)) continue;
 		const trimmed = text.trim();
 		if (kind !== 'remove_bullet' && !trimmed) continue;
 		if (

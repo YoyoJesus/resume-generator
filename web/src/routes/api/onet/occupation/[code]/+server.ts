@@ -3,6 +3,7 @@ import { fetchOccupation, isValidOnetCode, onetError } from '$lib/server/onet';
 import { onetFail, onetOk, onetKey } from '$lib/server/onet-route';
 
 export const prerender = false;
+export const config = { maxDuration: 60 };
 
 export const GET: RequestHandler = async ({ params }) => {
 	const code = params.code ?? '';

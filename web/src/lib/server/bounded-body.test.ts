@@ -38,3 +38,10 @@ describe('readBoundedBody', () => {
 		expect(cancel).toHaveBeenCalledOnce();
 	});
 });
+
+it('accepts exactly the byte limit and rejects a falsified small content length', async () => {
+	const request = () =>
+		new Request('https://example.test', { method: 'POST', headers: { 'content-length': '1' }, body: '12345' });
+	expect(await readBoundedBody(request(), 5)).toBe('12345');
+	await expect(readBoundedBody(request(), 4)).rejects.toBeInstanceOf(RequestBodyTooLargeError);
+});

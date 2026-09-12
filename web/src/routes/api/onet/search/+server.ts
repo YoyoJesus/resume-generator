@@ -4,6 +4,7 @@ import { onetFail, onetOk, onetKey } from '$lib/server/onet-route';
 
 // The root layout prerenders pages; this endpoint is dynamic.
 export const prerender = false;
+export const config = { maxDuration: 60 };
 
 const MAX_KEYWORD = 100;
 

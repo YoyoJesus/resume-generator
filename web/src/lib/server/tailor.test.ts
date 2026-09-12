@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { validateEdits, MAX_EDITS, buildTailorInput, isValidTailorResume, TAILOR_SCHEMA } from './tailor';
+import {
+	validateEdits,
+	MAX_EDITS,
+	buildTailorInput,
+	isValidTailorResume,
+	TAILOR_SCHEMA,
+	MAX_FIELD_CHARS,
+	MAX_SKILL_CHARS,
+} from './tailor';
 import { defaultResumeData } from '$lib/types';
 import type { ResumeData } from '$lib/types';
 import type { OnetOccupation } from '$lib/onet-types';
@@ -111,6 +119,30 @@ describe('buildTailorInput', () => {
 		};
 	}
 
+	// The four font controls are always offered, so allowed.fields is never empty
+	// and cannot be used to decide whether there is anything worth tailoring.
+	it('reports no targets for a resume with nothing to tailor', () => {
+		const bare = resume();
+		bare.workExperience = [];
+		bare.skills = [];
+		bare.profile.summary = '';
+
+		const empty = buildTailorInput(bare, occupation);
+		expect(empty.hasTargets).toBe(false);
+		expect(empty.allowed.fields?.size).toBe(4);
+		expect(buildTailorInput(resume(), occupation).hasTargets).toBe(true);
+	});
+
+	it.each([
+		['bullets', (r: ResumeData) => (r.skills = [])],
+		['skills', (r: ResumeData) => (r.workExperience = [])],
+	])('reports targets when only %s remain', (_label, strip) => {
+		const r = resume();
+		r.profile.summary = '';
+		strip(r);
+		expect(buildTailorInput(r, occupation).hasTargets).toBe(true);
+	});
+
 	it('offers every insertable target so the model can only choose a real one', () => {
 		const { allowed: a } = buildTailorInput(resume(), occupation);
 		expect([...a.bullets]).toEqual(['w1']);
@@ -208,4 +240,16 @@ describe('isValidTailorResume', () => {
 		];
 		expect(isValidTailorResume(resume)).toBe(false);
 	});
+});
+
+it.each([
+	['skill', 's1', -1, MAX_SKILL_CHARS],
+	['add_bullet', 'w1', -1, MAX_FIELD_CHARS],
+	['rewrite_bullet', 'w1', 0, MAX_FIELD_CHARS],
+	['rewrite_field', 'profile', -1, MAX_FIELD_CHARS],
+])('bounds %s edit text', (kind, targetId, bulletIndex, limit) => {
+	const targets = { ...allowed, fields: new Set(['profile']) };
+	const item = edit({ kind, targetId, bulletIndex, text: 'x'.repeat(Number(limit)) });
+	expect(validateEdits({ edits: [item] }, targets)).toHaveLength(1);
+	expect(validateEdits({ edits: [{ ...item, text: item.text + 'x' }] }, targets)).toEqual([]);
 });
