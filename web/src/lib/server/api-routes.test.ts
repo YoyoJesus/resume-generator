@@ -15,7 +15,7 @@ vi.mock('openai', () => ({
 import { POST as extract } from '../../routes/api/extract/+server';
 import { POST as convert } from '../../routes/api/template/convert/+server';
 import { GET as search } from '../../routes/api/onet/search/+server';
-import { OPENAI_REQUEST_OPTIONS } from './upstream-limits';
+import { MAX_EXTRACT_OUTPUT_TOKENS, OPENAI_REQUEST_OPTIONS } from './upstream-limits';
 const MAX_EXTRACT_BODY_BYTES = 120_000 * 6 + 16_384;
 const MAX_TEMPLATE_BODY_BYTES = 4 * 1024 * 1024 + 64 * 1024;
 const text =
@@ -134,6 +134,8 @@ it('extracts valid content and ignores client quality claims', async () => {
 	);
 	expect(response.status).toBe(200);
 	expect(mocks.create.mock.calls[0][0].store).toBe(false);
+	// The timeout bounds latency, not spend; the output ceiling bounds the bill.
+	expect(mocks.create.mock.calls[0][0].max_output_tokens).toBe(MAX_EXTRACT_OUTPUT_TOKENS);
 	expect(mocks.create.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
 	const rejected = await extract(
 		event(jsonRequest({ filename: 'a.txt', text: 'short', metrics: { method: 'text', score: 100 } })),

@@ -144,7 +144,7 @@ function scaleLines(label: string, items: { name: string }[]): string[] {
 export function buildTailorInput(
 	resume: ResumeData,
 	occupation: OnetOccupation,
-): { prompt: string; allowed: AllowedTargets } {
+): { prompt: string; hasTargets: boolean; allowed: AllowedTargets } {
 	const bullets = [...bulletTargets(resume)];
 	const skills = skillTargets(resume);
 	const fields = resume.profile.summary.trim() ? ['profile'] : [];
@@ -244,6 +244,8 @@ export function buildTailorInput(
 
 	return {
 		prompt: lines.join('\n'),
+		// Font controls are always offered, so they never count as something to tailor.
+		hasTargets: bullets.length > 0 || skills.length > 0 || fields.length > 0,
 		allowed: {
 			bullets: new Set(bullets.map((b) => b.id)),
 			skills: new Set(skills.map((s) => s.id)),

@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
-import { OPENAI_REQUEST_OPTIONS } from '$lib/server/upstream-limits';
+import { MAX_TAILOR_OUTPUT_TOKENS, OPENAI_REQUEST_OPTIONS } from '$lib/server/upstream-limits';
 import { MODEL, mapOpenAIError, extractError } from '$lib/server/extraction';
 import { fetchOccupation, isValidOnetCode, onetError } from '$lib/server/onet';
 import { onetFail, onetKey } from '$lib/server/onet-route';
@@ -59,10 +59,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		return onetFail(err);
 	}
 
-	const { prompt, allowed } = buildTailorInput(body.resume, occupation);
-	if (allowed.bullets.size === 0 && allowed.skills.size === 0 && (allowed.fields?.size ?? 0) === 0) {
-		return json({ edits: [], reason: 'no_targets' });
-	}
+	// allowed.fields always carries the four font controls, so it cannot answer this on its own.
+	const { prompt, hasTargets, allowed } = buildTailorInput(body.resume, occupation);
+	if (!hasTargets) return json({ edits: [], reason: 'no_targets' });
 
 	try {
 		const client = new OpenAI({ apiKey: env.OPENAI_API_KEY, ...OPENAI_REQUEST_OPTIONS });
@@ -72,6 +71,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				store: false,
 				input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }] }],
 				reasoning: { effort: 'medium' },
+				max_output_tokens: MAX_TAILOR_OUTPUT_TOKENS,
 				text: {
 					format: {
 						type: 'json_schema',
@@ -84,7 +84,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ signal: AbortSignal.timeout(OPENAI_REQUEST_OPTIONS.timeout) },
 		);
 
-		const raw = response.output_text;
+		// A truncated response is invalid JSON; treat it as a parse failure rather than parsing a fragment.
+		const raw = response.status === 'incomplete' ? '' : response.output_text;
 		if (!raw) return fail(extractError('parse_failed'));
 
 		return json({ edits: validateEdits(JSON.parse(raw), allowed) });

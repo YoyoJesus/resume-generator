@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
-import { OPENAI_REQUEST_OPTIONS } from '$lib/server/upstream-limits';
+import { MAX_EXTRACT_OUTPUT_TOKENS, OPENAI_REQUEST_OPTIONS } from '$lib/server/upstream-limits';
 import {
 	MODEL,
 	RESUME_SCHEMA,
@@ -87,6 +87,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				model: MODEL,
 				input: [{ role: 'user', content }],
 				reasoning: { effort: 'medium' },
+				max_output_tokens: MAX_EXTRACT_OUTPUT_TOKENS,
 				store: false,
 				text: {
 					format: {
@@ -100,7 +101,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			{ signal: AbortSignal.timeout(OPENAI_REQUEST_OPTIONS.timeout) },
 		);
 
-		const raw = response.output_text;
+		// A truncated response is invalid JSON; treat it as a parse failure rather than parsing a fragment.
+		const raw = response.status === 'incomplete' ? '' : response.output_text;
 		if (!raw) return fail(extractError('parse_failed'));
 
 		const data = validateExtractedResume(JSON.parse(raw));

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createApiGuard, RATE_WINDOW_MS, AI_REQUESTS_PER_MINUTE, ONET_REQUESTS_PER_MINUTE } from './api-guard';
+import {
+	createApiGuard,
+	rateLimitKey,
+	RATE_WINDOW_MS,
+	AI_REQUESTS_PER_MINUTE,
+	ONET_REQUESTS_PER_MINUTE,
+} from './api-guard';
 const url = new URL('https://example.test/api/extract');
 const request = (method = 'POST', headers = {}) => new Request(url, { method, headers });
 describe('API guard', () => {
@@ -29,6 +35,28 @@ describe('API guard', () => {
 		const other = new URL('/api/template/convert', url);
 		expect(guard(new Request(other, { method: 'POST' }), other, 'ip', 0)?.status).toBe(429);
 	});
+	// x-forwarded-for is a caller-influenced chain; only the entry the deployment
+	// proxy appends last is a usable identity. Keying on the whole string would let
+	// a spoofed prefix mint a fresh bucket on every request.
+	it.each([
+		['1.2.3.4', '1.2.3.4'],
+		[' 1.2.3.4 ', '1.2.3.4'],
+		['spoofed, 1.2.3.4', '1.2.3.4'],
+		['a, b, 1.2.3.4', '1.2.3.4'],
+		['', 'unknown'],
+		[null, 'unknown'],
+		[undefined, 'unknown'],
+	])('derives the rate-limit key from the rightmost forwarded entry: %p', (address, expected) => {
+		expect(rateLimitKey(address)).toBe(expected);
+	});
+
+	it('does not let a spoofed forwarding prefix escape the quota', () => {
+		const guard = createApiGuard();
+		const send = (prefix: string) => guard(request(), url, rateLimitKey(`${prefix}, 1.2.3.4`), 0);
+		for (let i = 0; i < AI_REQUESTS_PER_MINUTE; i++) expect(send(String(i))).toBeNull();
+		expect(send('fresh')?.status).toBe(429);
+	});
+
 	it('does not let new identities evict existing rate limits', () => {
 		const guard = createApiGuard();
 		for (let i = 0; i < 10000; i++) guard(request(), url, String(i), 0);

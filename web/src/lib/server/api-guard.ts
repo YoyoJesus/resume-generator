@@ -5,6 +5,16 @@ export const AI_REQUESTS_PER_MINUTE = 6;
 export const ONET_REQUESTS_PER_MINUTE = 60;
 const MAX_CLIENTS = 10_000;
 
+/**
+ * Adapters surface `x-forwarded-for` verbatim, and that header is a proxy chain
+ * the caller controls except for the entry the deployment proxy appends last.
+ * Keying on the whole string would let any caller-supplied prefix mint a fresh
+ * bucket per request, so only the rightmost entry is usable as an identity.
+ */
+export function rateLimitKey(address: string | null | undefined): string {
+	return address?.split(',').pop()?.trim() || 'unknown';
+}
+
 /** Best effort per instance. The bounded map cannot provide a deployment-wide quota. */
 export function createApiGuard() {
 	const clients = new Map<string, { count: number; expires: number }>();
