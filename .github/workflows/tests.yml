@@ -65,3 +65,6 @@ jobs:
 
       - name: Build production application
         run: npm run build
+
+      - name: Smoke test production server startup and API routes
+        run: npm run test:production
