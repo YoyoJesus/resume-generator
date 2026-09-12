@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyTailorEdits } from './onet-apply';
+import { isTailorResponseCurrent, snapshotTailorRequest } from './onet-tailor-guard';
 import { defaultResumeData } from './types';
 import type { ResumeData } from './types';
 import type { TailorEdit } from './onet-types';
@@ -200,5 +201,44 @@ describe('applyTailorEdits', () => {
 
 		expect(data).toEqual(before);
 		expect(paths).toEqual([]);
+	});
+
+	it('rejects a stale tailoring response after a bullet is removed', () => {
+		const submitted = seed();
+		submitted.workExperience[0].bullets = ['A', 'B'];
+		const live = structuredClone(submitted);
+		live.workExperience[0].bullets = ['B'];
+		const snapshot = snapshotTailorRequest(submitted, '15-1252.00', 1);
+		const edits: TailorEdit[] = [{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 0, text: 'Rewritten A' }];
+
+		if (isTailorResponseCurrent(snapshot, live, '15-1252.00', 1)) {
+			applyTailorEdits(live, edits);
+		}
+
+		expect(live.workExperience[0].bullets).toEqual(['B']);
+	});
+
+	it('rejects a stale tailoring response after profile edits', () => {
+		const submitted = seed();
+		const live = structuredClone(submitted);
+		live.profile.summary = 'Updated by the user';
+		const snapshot = snapshotTailorRequest(submitted, '15-1252.00', 1);
+
+		expect(isTailorResponseCurrent(snapshot, live, '15-1252.00', 1)).toBe(false);
+	});
+
+	it('rejects responses after occupation or request invalidation', () => {
+		const submitted = seed();
+		const snapshot = snapshotTailorRequest(submitted, '15-1252.00', 1);
+
+		expect(isTailorResponseCurrent(snapshot, submitted, '13-1111.00', 1)).toBe(false);
+		expect(isTailorResponseCurrent(snapshot, submitted, '15-1252.00', 2)).toBe(false);
+	});
+
+	it('accepts an unchanged response for the active occupation and request', () => {
+		const submitted = seed();
+		const snapshot = snapshotTailorRequest(submitted, '15-1252.00', 1);
+
+		expect(isTailorResponseCurrent(snapshot, submitted, '15-1252.00', 1)).toBe(true);
 	});
 });

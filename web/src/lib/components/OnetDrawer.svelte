@@ -7,6 +7,7 @@
 	import type { ResumeData } from '$lib/types';
 	import { appendBullet, appendSkill, appendSkillToNewCategory, bulletTargets, skillTargets } from '$lib/onet-insert';
 	import { applyTailorEdits } from '$lib/onet-apply';
+	import { isTailorResponseCurrent, snapshotTailorRequest } from '$lib/onet-tailor-guard';
 	import { aiFilled } from '$lib/ai-highlight';
 	import OnetInsertMenu from './OnetInsertMenu.svelte';
 
@@ -29,6 +30,7 @@
 	let tailoring = $state(false);
 	let tailorError = $state('');
 	let tailorNote = $state('');
+	let tailorRequestId = 0;
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	let drawer = $state<HTMLElement>();
 	let searchInput = $state<HTMLInputElement>();
@@ -111,6 +113,8 @@
 	}
 
 	function changeOccupation() {
+		tailorRequestId++;
+		tailoring = false;
 		occupation = null;
 		error = '';
 		tailorError = '';
@@ -156,6 +160,10 @@
 	// applies whatever comes back, highlighted for review.
 	async function autoTailor() {
 		if (!occupation || tailoring) return;
+		const selectedOccupation = occupation;
+		const requestId = ++tailorRequestId;
+		const submittedData = structuredClone(data);
+		const snapshot = snapshotTailorRequest(submittedData, selectedOccupation.code, requestId);
 		tailoring = true;
 		tailorError = '';
 		tailorNote = '';
@@ -163,15 +171,22 @@
 			const res = await fetch('/api/onet/tailor', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ resume: data, code: occupation.code }),
+				body: JSON.stringify({ resume: submittedData, code: selectedOccupation.code }),
 			});
+			if (requestId !== tailorRequestId) return;
 			if (!res.ok) {
-				tailorError = await readError(res);
+				const message = await readError(res);
+				if (requestId === tailorRequestId) tailorError = message;
 				return;
 			}
 
 			const edits: TailorEdit[] = (await res.json()).edits ?? [];
-			const result = applyTailorEdits(data, edits);
+			if (!isTailorResponseCurrent(snapshot, data, occupation?.code ?? null, tailorRequestId)) {
+				tailorNote = 'The resume or target occupation changed while tailoring was in progress. The result was discarded; retry to apply it to the current resume.';
+				return;
+			}
+
+			const result = applyTailorEdits(submittedData, edits);
 			data = result.data;
 			applyPaths(result.paths);
 			if (result.removed > 0 && result.paths.length === 0) onInserted();
@@ -191,9 +206,9 @@
 				tailorNote = `${parts.join(', ')}. Rewritten and added text is highlighted in purple; review every change before exporting.`;
 			}
 		} catch {
-			tailorError = GENERIC_ERROR;
+			if (requestId === tailorRequestId) tailorError = GENERIC_ERROR;
 		} finally {
-			tailoring = false;
+			if (requestId === tailorRequestId) tailoring = false;
 		}
 	}
 
@@ -207,6 +222,8 @@
 	}
 
 	function close() {
+		tailorRequestId++;
+		tailoring = false;
 		open = false;
 		menuFor = null;
 		// Clear the error so reopening retries. The auto-load effect below bails
