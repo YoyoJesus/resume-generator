@@ -29,6 +29,8 @@
 	let tailoring = $state(false);
 	let tailorError = $state('');
 	let tailorNote = $state('');
+	let tailorController: AbortController | null = null;
+	let tailorRequest = 0;
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	let drawer = $state<HTMLElement>();
 	let searchInput = $state<HTMLInputElement>();
@@ -110,11 +112,18 @@
 		}
 	}
 
+	function abandonPendingTailor() {
+		tailorController?.abort();
+		tailorController = null;
+		tailorRequest++;
+	}
+
 	function changeOccupation() {
 		occupation = null;
 		error = '';
 		tailorError = '';
 		tailorNote = '';
+		abandonPendingTailor();
 		onetStore.clear();
 		onetStore.saveToStorage();
 	}
@@ -159,19 +168,31 @@
 		tailoring = true;
 		tailorError = '';
 		tailorNote = '';
+		const submitted: ResumeData = JSON.parse(JSON.stringify(data));
+		const controller = new AbortController();
+		tailorController = controller;
+		const requestId = ++tailorRequest;
 		try {
 			const res = await fetch('/api/onet/tailor', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ resume: data, code: occupation.code }),
+				body: JSON.stringify({ resume: submitted, code: occupation.code }),
+				signal: controller.signal,
 			});
+			if (requestId !== tailorRequest) return;
 			if (!res.ok) {
 				tailorError = await readError(res);
 				return;
 			}
 
 			const edits: TailorEdit[] = (await res.json()).edits ?? [];
-			const result = applyTailorEdits(data, edits);
+			if (requestId !== tailorRequest) return;
+
+			const result = applyTailorEdits(submitted, data, edits);
+			if (result.stale) {
+				tailorError = 'Your resume changed while tailoring was running. Review your edits, then try again.';
+				return;
+			}
 			data = result.data;
 			applyPaths(result.paths);
 			if (result.removed > 0 && result.paths.length === 0) onInserted();
@@ -191,8 +212,10 @@
 				tailorNote = `${parts.join(', ')}. Rewritten and added text is highlighted in purple; review every change before exporting.`;
 			}
 		} catch {
+			if (controller.signal.aborted) return;
 			tailorError = GENERIC_ERROR;
 		} finally {
+			if (tailorController === controller) tailorController = null;
 			tailoring = false;
 		}
 	}

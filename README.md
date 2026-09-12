@@ -66,15 +66,16 @@ Free O\*NET developer keys are available from the [O\*NET Web Services developer
 
 Run these from `web/`:
 
-| Command           | Purpose                                |
-| ----------------- | -------------------------------------- |
-| `npm run dev`     | Start the development server           |
-| `npm run build`   | Create a production build              |
-| `npm run preview` | Preview a production build locally     |
-| `npm test`        | Run the Vitest suite                   |
-| `npm run check`   | Run Svelte and TypeScript diagnostics  |
-| `npm run lint`    | Check formatting with Prettier         |
-| `npm run format`  | Format the app workspace with Prettier |
+| Command                   | Purpose                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `npm run dev`             | Start the development server                                                     |
+| `npm run build`           | Create a production build                                                        |
+| `npm run preview`         | Preview a production build locally                                               |
+| `npm test`                | Run the Vitest suite                                                             |
+| `npm run test:production` | Smoke test built server startup and API routes (run after build; no keys needed) |
+| `npm run check`           | Run Svelte and TypeScript diagnostics                                            |
+| `npm run lint`            | Check formatting with Prettier                                                   |
+| `npm run format`          | Format the app workspace with Prettier                                           |
 
 ## Custom templates
 
@@ -90,7 +91,7 @@ Use [the example custom template](docs/examples/modern-teal.typ) or download the
 
 ## Deployment
 
-API requests reject foreign `Origin` and Fetch Metadata headers. A bounded in-memory limiter allows each client IP 6 AI requests and 60 O*NET GET requests per minute, with the AI quota shared across extraction, tailoring, and template conversion. Rejections return JSON with HTTP 429 and `Retry-After`. Requests without browser headers still consume quota. Limits are best-effort per serverless instance: cold starts and multiple instances reset or multiply them, and they are not authentication or a deployment-wide spending cap. Client addresses come from the deployment adapter, which reports the `x-forwarded-for` chain; only the rightmost entry is used as the bucket key, since a caller controls everything before the address the deployment proxy appends. Adapters without client-address support share a fallback bucket. No database is used.
+API requests reject foreign `Origin` and Fetch Metadata headers. A bounded in-memory limiter allows each client IP 6 AI requests and 60 O\*NET GET requests per minute, with the AI quota shared across extraction, tailoring, and template conversion. Rejections return JSON with HTTP 429 and `Retry-After`. Requests without browser headers still consume quota. Limits are best-effort per serverless instance: cold starts and multiple instances reset or multiply them, and they are not authentication or a deployment-wide spending cap. Client addresses come from the deployment adapter, which reports the `x-forwarded-for` chain; only the rightmost entry is used as the bucket key, since a caller controls everything before the address the deployment proxy appends. Adapters without client-address support share a fallback bucket. No database is used.
 
 Before public deployment, configure provider budget alerts and review available account spending controls. Monitor usage and revoke the key or disable AI routes if necessary; do not rely on budget alerts or the in-memory limiter as a hard spending ceiling. Apply deployment-level firewall controls when available for your plan.
 

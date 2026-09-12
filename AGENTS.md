@@ -1,5 +1,60 @@
 # Repository Guidelines
 
+## Before opening a pull request
+
+Copy the literal forms in this section. Do not paraphrase them.
+
+- Run `npm test`, `npm run check`, and `npm run lint` from `web/`, plus `npm run build` when the change can affect bundling or deployment. Every one must pass before you push.
+- If `npm run lint` flags files you did not touch, that is a CRLF working-tree artifact on Windows, not a repository baseline to disclose and move past. Run `npm run format`, then commit only the files your change actually touches.
+- Open the pull request from a branch. Never push to `main`.
+
+Every commit message is exactly one line, with no body and no footer:
+
+```text
+fix(onet): ignore stale tailoring responses
+```
+
+Use this pull request body verbatim. Keep every heading, replace each HTML comment with your own text, tick the boxes you completed, and keep the attribution footer as the final three lines:
+
+```markdown
+## Summary
+
+<!-- What changed, and what user or contributor problem does it solve? -->
+
+## Verification
+
+<!-- List the commands and manual checks you ran, with their results. -->
+
+- [ ] `npm test`
+- [ ] `npm run check`
+- [ ] `npm run lint`
+- [ ] `npm run build`
+- [ ] I added or updated tests for changed behavior.
+- [ ] I included screenshots or recordings for meaningful UI changes, or marked this not applicable below.
+
+## Risk and deployment
+
+<!-- Note privacy, security, AI-cost, dependency-size, migration, or Vercel implications. Write "None" if not applicable. -->
+
+## Checklist
+
+- [ ] My changes are focused and follow `AGENTS.md`.
+- [ ] I updated relevant documentation.
+- [ ] I used synthetic test data and did not commit secrets or personal resume information.
+- [ ] I reviewed the diff for unrelated generated or formatting changes.
+- [ ] If an AI agent prepared this PR, I added its provider, model, and harness footer below.
+
+AI assistance: yes
+
+Agent provider: PROVIDER_NAME
+Agent model: MODEL_NAME
+Agent harness: HARNESS_NAME
+```
+
+Replace `PROVIDER_NAME`, `MODEL_NAME`, and `HARNESS_NAME` with the values actually used, for example `OpenAI`, `GPT-6`, and `Codex`. Write plain values with no angle brackets; validation rejects `<` and `>`. The three footer lines must be the last lines of the body, in that order. A human-authored pull request keeps `AI assistance: no` instead and omits the footer.
+
+Creating a pull request through the GitHub API, `gh pr create`, or an agent integration does not apply `.github/pull_request_template.md`. That is why the body above is reproduced here; supply it explicitly with `gh pr create --body-file`.
+
 ## Project layout
 
 - The deployable SvelteKit application lives in `web/`; run Node and npm commands there.
