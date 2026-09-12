@@ -5,6 +5,17 @@ let initPromise: Promise<void> | null = null;
 let initError: Error | null = null;
 let initialized = false;
 
+export interface PreviewPage {
+	pageOffset: number;
+	width: number;
+	height: number;
+}
+
+export interface CompiledPreview {
+	svg: string;
+	pages: PreviewPage[];
+}
+
 export async function initCompiler(): Promise<void> {
 	if (initialized) return;
 	if (initError) throw initError;
@@ -45,16 +56,26 @@ export async function compileToPdf(typstCode: string): Promise<Uint8Array> {
 	}
 }
 
-export async function compileToSvg(typstCode: string): Promise<string> {
+export async function compileToPreview(typstCode: string): Promise<CompiledPreview> {
 	await initCompiler();
 
 	try {
-		const svgData = await $typst.svg({ mainContent: typstCode });
-		return svgData;
+		const vectorData = await $typst.vector({ mainContent: typstCode });
+		if (!vectorData) throw new Error('Preview compilation returned no data');
+
+		const renderer = await $typst.getRenderer();
+		return renderer.runWithSession({ format: 'vector', artifactContent: vectorData }, async (session) => ({
+			svg: await session.renderSvg({}),
+			pages: session.retrievePagesInfo(),
+		}));
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		throw new Error(message);
 	}
+}
+
+export async function compileToSvg(typstCode: string): Promise<string> {
+	return (await compileToPreview(typstCode)).svg;
 }
 
 export function downloadPdf(pdfData: Uint8Array, filename: string = 'resume.pdf'): void {
