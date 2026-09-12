@@ -20,7 +20,7 @@
 </script>
 
 <div
-	class="bg-gray-500 rounded-lg shadow p-4 flex flex-col items-center overflow-auto max-h-[calc(100vh-10rem)] lg:max-h-none lg:h-full"
+	class="flex h-[calc(100vh-10rem)] flex-col items-center overflow-hidden rounded-lg bg-gray-500 p-4 shadow lg:h-full"
 >
 	<h2 class="text-lg font-semibold mb-4 text-white">
 		{showCode
@@ -29,14 +29,13 @@
 	</h2>
 
 	{#if showCode}
-		<div class="relative w-full">
+		<div class="relative min-h-0 w-full flex-1">
 			<button class="absolute top-2 right-2 secondary text-xs" onclick={copyToClipboard}>Copy</button>
-			<pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto max-h-[calc(100vh-16rem)] text-xs w-full"><code
-					>{typstCode}</code
+			<pre class="h-full w-full overflow-auto rounded-lg bg-gray-900 p-4 text-xs text-gray-100"><code>{typstCode}</code
 				></pre>
 		</div>
 	{:else}
-		<div class="flex w-full justify-center">
+		<div class="flex min-h-0 w-full flex-1 justify-center">
 			{#if isPreviewLoading && !preview}
 				<div class="flex items-center justify-center h-full text-gray-400">
 					<span>Compiling preview...</span>

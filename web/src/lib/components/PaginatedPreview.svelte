@@ -31,6 +31,11 @@
 			pageRoot.setAttribute('data-height', String(page.height));
 
 			for (const node of shared) pageRoot.appendChild(node.cloneNode(true));
+			const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+			background.setAttribute('width', String(page.width));
+			background.setAttribute('height', String(page.height));
+			background.setAttribute('fill', 'white');
+			pageRoot.appendChild(background);
 			const pageContent = renderedPage.cloneNode(true) as SVGElement;
 			const transform = renderedPage.getAttribute('transform') ?? '';
 			const horizontalOffset = transform.match(/translate\(\s*([^,\s)]+)/)?.[1] ?? '0';
@@ -48,7 +53,10 @@
 </script>
 
 {#if pageSvgs.length > 0 && pageSvgs.length === preview.pages.length}
-	<div class="flex w-full flex-col items-center gap-3" aria-label={`${pageSvgs.length}-page resume preview`}>
+	<div
+		class="flex h-full min-h-0 w-full flex-col items-center gap-3"
+		aria-label={`${pageSvgs.length}-page resume preview`}
+	>
 		{#if pageSvgs.length > 1}
 			<nav class="flex w-full max-w-[510px] items-center justify-between gap-3" aria-label="Preview pages">
 				<button
@@ -68,14 +76,17 @@
 				>
 			</nav>
 		{/if}
-		<figure class="m-0 w-full max-w-[510px]" aria-label={`Resume page ${pageIndex + 1}`}>
-			<div class="resume-page overflow-hidden bg-white shadow-lg">
+		<figure
+			class="m-0 grid min-h-0 w-full flex-1 place-items-center overflow-hidden"
+			aria-label={`Resume page ${pageIndex + 1}`}
+		>
+			<div class="resume-page h-full w-full overflow-hidden">
 				{@html pageSvgs[pageIndex]}
 			</div>
 		</figure>
 	</div>
 {:else}
-	<div class="resume-page w-full max-w-[510px] overflow-hidden bg-white shadow-lg">
+	<div class="resume-page grid h-full w-full place-items-center overflow-hidden">
 		{@html preview.svg}
 	</div>
 {/if}
@@ -84,6 +95,8 @@
 	.resume-page :global(svg) {
 		display: block;
 		width: 100%;
-		height: auto;
+		height: 100%;
+		max-width: 510px;
+		margin: 0 auto;
 	}
 </style>
