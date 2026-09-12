@@ -3,7 +3,8 @@
 		showCode = $bindable(),
 		isCompiling,
 		compileError,
-		isOverOnePage,
+		compiledPageCount,
+		estimatedOverOnePage,
 		onDownload,
 		onUpload,
 		onTemplate,
@@ -13,7 +14,8 @@
 		showCode: boolean;
 		isCompiling: boolean;
 		compileError: string | null;
-		isOverOnePage: boolean;
+		compiledPageCount: number | null;
+		estimatedOverOnePage: boolean;
 		onDownload: () => void;
 		onUpload: () => void;
 		onTemplate: () => void;
@@ -43,9 +45,13 @@
 		{#if compileError}
 			<div class="mt-2 text-red-600 text-sm">{compileError}</div>
 		{/if}
-		{#if isOverOnePage}
+		{#if compiledPageCount !== null && compiledPageCount > 1}
 			<div class="mt-2 px-3 py-2 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded text-sm">
-				Warning: Your resume may exceed one page. Consider removing some content.
+				Your resume is {compiledPageCount} pages. Consider removing some content if you are targeting a one-page resume.
+			</div>
+		{:else if compiledPageCount === null && estimatedOverOnePage}
+			<div class="mt-2 px-3 py-2 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded text-sm">
+				Your resume may exceed one page. The preview is still calculating the exact page count.
 			</div>
 		{/if}
 	</div>

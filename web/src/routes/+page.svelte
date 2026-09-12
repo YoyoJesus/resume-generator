@@ -3,7 +3,7 @@
 	import { resumeStore } from '$lib/store';
 	import { onetStore } from '$lib/onet-store';
 	import { generateTypstCode } from '$lib/typst-generator';
-	import { initCompiler, compileToPdf, compileToSvg, downloadPdf } from '$lib/pdf-compiler';
+	import { initCompiler, compileToPdf, compileToPreview, downloadPdf, type CompiledPreview } from '$lib/pdf-compiler';
 	import type { ResumeData } from '$lib/types';
 	import { defaultResumeData } from '$lib/types';
 	import { estimateOverOnePage } from '$lib/resume-utils';
@@ -36,23 +36,27 @@
 	let compileError = $state<string | null>(null);
 	let customTemplate = $state<CustomTemplate | null>(null);
 	let typstCode = $derived(generateTypstCode(data, customTemplate?.source));
-	let svgPreview = $state<string>('');
+	let preview = $state<CompiledPreview | null>(null);
 	let isPreviewLoading = $state(false);
 	let uploadOpen = $state(false);
 	let templateOpen = $state(false);
 	let tailorOpen = $state(false);
 	let showReviewBanner = $state(false);
 	let previewDebounceTimer: ReturnType<typeof setTimeout> | undefined;
-	let isOverOnePage = $derived(estimateOverOnePage(data));
+	let previewRequest = 0;
+	let estimatedOverOnePage = $derived(estimateOverOnePage(data));
+	let compiledPageCount = $derived(preview?.pages.length ?? null);
 
 	async function updatePreview(code: string) {
+		const requestId = ++previewRequest;
 		isPreviewLoading = true;
 		try {
-			svgPreview = await compileToSvg(code);
+			const compiled = await compileToPreview(code);
+			if (requestId === previewRequest) preview = compiled;
 		} catch (err) {
 			console.error('SVG preview failed:', err);
 		} finally {
-			isPreviewLoading = false;
+			if (requestId === previewRequest) isPreviewLoading = false;
 		}
 	}
 
@@ -128,7 +132,8 @@
 		bind:showCode
 		{isCompiling}
 		{compileError}
-		{isOverOnePage}
+		{compiledPageCount}
+		{estimatedOverOnePage}
 		onDownload={downloadPdfFile}
 		onUpload={() => (uploadOpen = true)}
 		onTemplate={() => (templateOpen = true)}
@@ -187,7 +192,7 @@
 			</div>
 
 			<!-- Preview Panel -->
-			<PreviewPanel {showCode} {typstCode} {svgPreview} {isPreviewLoading} />
+			<PreviewPanel {showCode} {typstCode} {preview} {isPreviewLoading} />
 		</div>
 	</main>
 

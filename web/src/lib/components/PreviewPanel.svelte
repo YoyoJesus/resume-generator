@@ -1,13 +1,16 @@
 <script lang="ts">
+	import type { CompiledPreview } from '$lib/pdf-compiler';
+	import PaginatedPreview from './PaginatedPreview.svelte';
+
 	let {
 		showCode,
 		typstCode,
-		svgPreview,
+		preview,
 		isPreviewLoading,
 	}: {
 		showCode: boolean;
 		typstCode: string;
-		svgPreview: string;
+		preview: CompiledPreview | null;
 		isPreviewLoading: boolean;
 	} = $props();
 
@@ -20,7 +23,9 @@
 	class="bg-gray-500 rounded-lg shadow p-4 flex flex-col items-center overflow-auto max-h-[calc(100vh-10rem)] lg:max-h-none lg:h-full"
 >
 	<h2 class="text-lg font-semibold mb-4 text-white">
-		{showCode ? 'Typst Code' : 'Resume Preview'}
+		{showCode
+			? 'Typst Code'
+			: `Resume Preview${preview ? ` · ${preview.pages.length} ${preview.pages.length === 1 ? 'page' : 'pages'}` : ''}`}
 	</h2>
 
 	{#if showCode}
@@ -31,13 +36,13 @@
 				></pre>
 		</div>
 	{:else}
-		<div class="bg-white shadow-lg overflow-hidden resume-preview" style="width: 100%; max-width: 510px;">
-			{#if isPreviewLoading && !svgPreview}
+		<div class="flex w-full justify-center">
+			{#if isPreviewLoading && !preview}
 				<div class="flex items-center justify-center h-full text-gray-400">
 					<span>Compiling preview...</span>
 				</div>
-			{:else if svgPreview}
-				{@html svgPreview}
+			{:else if preview}
+				<PaginatedPreview {preview} />
 			{:else}
 				<div class="flex items-center justify-center h-full text-gray-400">
 					<span>Preview will appear here</span>
@@ -46,10 +51,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	.resume-preview :global(svg) {
-		width: 100%;
-		height: auto;
-	}
-</style>
