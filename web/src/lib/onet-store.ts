@@ -18,10 +18,10 @@ function createOnetStore() {
 		select: (ref: OnetOccupationRef) => set(ref),
 		clear: () => set(null),
 		loadFromStorage: () => {
-			if (typeof localStorage === 'undefined') return;
-			const saved = localStorage.getItem(ONET_STORAGE_KEY);
-			if (!saved) return;
 			try {
+				if (typeof localStorage === 'undefined') return;
+				const saved = localStorage.getItem(ONET_STORAGE_KEY);
+				if (!saved) return;
 				const parsed = JSON.parse(saved);
 				if (isRef(parsed)) set({ ...parsed, brightOutlook: parsed.brightOutlook === true });
 			} catch {
@@ -29,10 +29,14 @@ function createOnetStore() {
 			}
 		},
 		saveToStorage: () => {
-			if (typeof localStorage === 'undefined') return;
-			const current = get({ subscribe });
-			if (current) localStorage.setItem(ONET_STORAGE_KEY, JSON.stringify(current));
-			else localStorage.removeItem(ONET_STORAGE_KEY);
+			try {
+				if (typeof localStorage === 'undefined') return;
+				const current = get({ subscribe });
+				if (current) localStorage.setItem(ONET_STORAGE_KEY, JSON.stringify(current));
+				else localStorage.removeItem(ONET_STORAGE_KEY);
+			} catch {
+				// Storage may be blocked or full; keep the in-memory selection usable.
+			}
 		},
 	};
 }

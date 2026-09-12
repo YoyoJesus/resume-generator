@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { onetStore, ONET_STORAGE_KEY } from './onet-store';
 
@@ -68,4 +68,42 @@ describe('onetStore', () => {
 		onetStore.loadFromStorage();
 		expect(get(onetStore)).toBeNull();
 	});
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('keeps selection usable when storage operations throw', () => {
+	vi.stubGlobal('localStorage', {
+		getItem() {
+			throw new Error('blocked');
+		},
+		setItem() {
+			throw new Error('quota');
+		},
+		removeItem() {
+			throw new Error('blocked');
+		},
+	});
+	onetStore.select(REF);
+	expect(() => onetStore.loadFromStorage()).not.toThrow();
+	expect(() => onetStore.saveToStorage()).not.toThrow();
+	expect(get(onetStore)).toEqual(REF);
+	onetStore.clear();
+	expect(() => onetStore.saveToStorage()).not.toThrow();
+});
+
+it('handles a SecurityError while accessing localStorage itself', () => {
+	const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+	Object.defineProperty(globalThis, 'localStorage', {
+		configurable: true,
+		get() {
+			throw new Error('SecurityError');
+		},
+	});
+	try {
+		expect(() => onetStore.loadFromStorage()).not.toThrow();
+		expect(() => onetStore.saveToStorage()).not.toThrow();
+	} finally {
+		if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+	}
 });

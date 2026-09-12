@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { validateEdits, MAX_EDITS, buildTailorInput, isValidTailorResume, TAILOR_SCHEMA } from './tailor';
+import {
+	validateEdits,
+	MAX_EDITS,
+	buildTailorInput,
+	isValidTailorResume,
+	TAILOR_SCHEMA,
+	MAX_FIELD_CHARS,
+	MAX_SKILL_CHARS,
+} from './tailor';
 import { defaultResumeData } from '$lib/types';
 import type { ResumeData } from '$lib/types';
 import type { OnetOccupation } from '$lib/onet-types';
@@ -208,4 +216,16 @@ describe('isValidTailorResume', () => {
 		];
 		expect(isValidTailorResume(resume)).toBe(false);
 	});
+});
+
+it.each([
+	['skill', 's1', -1, MAX_SKILL_CHARS],
+	['add_bullet', 'w1', -1, MAX_FIELD_CHARS],
+	['rewrite_bullet', 'w1', 0, MAX_FIELD_CHARS],
+	['rewrite_field', 'profile', -1, MAX_FIELD_CHARS],
+])('bounds %s edit text', (kind, targetId, bulletIndex, limit) => {
+	const targets = { ...allowed, fields: new Set(['profile']) };
+	const item = edit({ kind, targetId, bulletIndex, text: 'x'.repeat(Number(limit)) });
+	expect(validateEdits({ edits: [item] }, targets)).toHaveLength(1);
+	expect(validateEdits({ edits: [{ ...item, text: item.text + 'x' }] }, targets)).toEqual([]);
 });

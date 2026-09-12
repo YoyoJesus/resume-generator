@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import JSZip from 'jszip';
 import {
 	extractDocxTemplateContext,
+	validateTemplateDesign,
 	generateTypstTemplateFromDesign,
 	MAX_OOXML_CONTEXT_CHARS,
 	MAX_OOXML_PART_BYTES,
@@ -121,5 +122,24 @@ describe('Typst generation from an AI design', () => {
 		expect(result).toContain('font-size: 14pt');
 		expect(result).toContain('top-margin: 0.15in');
 		expect(result).toContain('#let primary = rgb("0f766e")');
+	});
+});
+
+describe('validateTemplateDesign', () => {
+	it('accepts the complete contract', () => expect(validateTemplateDesign(DESIGN)).toEqual(DESIGN));
+	it.each([
+		null,
+		[],
+		{},
+		'text',
+		{ ...DESIGN, paper: 'invalid' },
+		{ ...DESIGN, margins: null },
+		{ ...DESIGN, margins: { top: 1 } },
+		{ ...DESIGN, baseSize: NaN },
+		{ ...DESIGN, primaryColor: 'red' },
+		{ ...DESIGN, uppercaseName: 'true' },
+		{ ...DESIGN, extra: true },
+	])('rejects malformed designs: %j', (value) => {
+		expect(validateTemplateDesign(value)).toBeNull();
 	});
 });

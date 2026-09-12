@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
+import { OPENAI_REQUEST_OPTIONS } from '$lib/server/upstream-limits';
 import { MODEL, mapOpenAIError, extractError } from '$lib/server/extraction';
 import { fetchOccupation, isValidOnetCode, onetError } from '$lib/server/onet';
 import { onetFail, onetKey } from '$lib/server/onet-route';
@@ -64,21 +65,24 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
-		const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-		const response = await client.responses.create({
-			model: MODEL,
-			store: false,
-			input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }] }],
-			reasoning: { effort: 'medium' },
-			text: {
-				format: {
-					type: 'json_schema',
-					name: 'tailor_edits',
-					strict: true,
-					schema: TAILOR_SCHEMA as unknown as Record<string, unknown>,
+		const client = new OpenAI({ apiKey: env.OPENAI_API_KEY, ...OPENAI_REQUEST_OPTIONS });
+		const response = await client.responses.create(
+			{
+				model: MODEL,
+				store: false,
+				input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }] }],
+				reasoning: { effort: 'medium' },
+				text: {
+					format: {
+						type: 'json_schema',
+						name: 'tailor_edits',
+						strict: true,
+						schema: TAILOR_SCHEMA as unknown as Record<string, unknown>,
+					},
 				},
 			},
-		});
+			{ signal: AbortSignal.timeout(OPENAI_REQUEST_OPTIONS.timeout) },
+		);
 
 		const raw = response.output_text;
 		if (!raw) return fail(extractError('parse_failed'));

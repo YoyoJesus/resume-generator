@@ -8,6 +8,8 @@ import type {
 } from '$lib/onet-types';
 
 // O*NET Web Services v2. The key goes in a header; it cannot be a query param.
+import { ONET_TIMEOUT_MS } from './upstream-limits';
+
 const BASE = 'https://api-v2.onetcenter.org';
 
 // Sections are paginated with a default window of 20. Ask for the whole list.
@@ -86,6 +88,7 @@ async function onetFetch(path: string, key: string): Promise<unknown> {
 	try {
 		res = await fetch(`${BASE}${path}`, {
 			headers: { 'X-API-Key': key, Accept: 'application/json' },
+			signal: AbortSignal.timeout(ONET_TIMEOUT_MS),
 		});
 	} catch {
 		throw onetError('upstream_unavailable');

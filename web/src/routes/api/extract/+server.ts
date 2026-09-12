@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import OpenAI from 'openai';
+import { OPENAI_REQUEST_OPTIONS } from '$lib/server/upstream-limits';
 import {
 	MODEL,
 	RESUME_SCHEMA,
@@ -11,7 +12,12 @@ import {
 	validateExtractedResume,
 	type ExtractError,
 } from '$lib/server/extraction';
-import { validateExtractedDocument, type DocumentMetrics } from '$lib/document-quality';
+import { validateExtractedDocument, MAX_EXTRACTED_TEXT_CHARS } from '$lib/document-quality';
+import { readBoundedBody, RequestBodyTooLargeError } from '$lib/server/bounded-body';
+
+// JSON can encode each UTF-16 code unit as six ASCII bytes.
+const MAX_EXTRACT_BODY_BYTES = MAX_EXTRACTED_TEXT_CHARS * 6 + 16_384;
+const MAX_FILENAME_CHARS = 255;
 
 // This endpoint is dynamic (the root layout sets prerender=true for pages).
 export const prerender = false;
@@ -28,16 +34,37 @@ function preflightFailure(message: string): Response {
 export const POST: RequestHandler = async ({ request }) => {
 	let filename: string;
 	let text: string;
-	let metrics: DocumentMetrics | undefined;
+	let method = 'text';
 	try {
-		const body = (await request.json()) as { filename?: unknown; text?: unknown; metrics?: DocumentMetrics };
-		if (typeof body.filename !== 'string' || typeof body.text !== 'string') {
+		const body = JSON.parse(await readBoundedBody(request, MAX_EXTRACT_BODY_BYTES));
+		if (
+			!body ||
+			typeof body.filename !== 'string' ||
+			!body.filename ||
+			body.filename.length > MAX_FILENAME_CHARS ||
+			typeof body.text !== 'string'
+		) {
 			return fail(extractError('invalid_file'));
 		}
 		filename = body.filename;
 		text = body.text;
-		metrics = body.metrics;
-	} catch {
+		// Client metrics never override the independently computed quality gate.
+		if (body.metrics !== undefined) {
+			if (
+				!body.metrics ||
+				typeof body.metrics !== 'object' ||
+				Array.isArray(body.metrics) ||
+				!['text', 'ocr', 'hybrid'].includes(body.metrics.method)
+			)
+				return fail(extractError('invalid_file'));
+			method = body.metrics.method;
+		}
+	} catch (error) {
+		if (error instanceof RequestBodyTooLargeError)
+			return json(
+				{ error: { code: 'file_too_large', message: 'The extraction request is too large.' } },
+				{ status: 413 },
+			);
 		return fail(extractError('invalid_file'));
 	}
 
@@ -45,8 +72,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (gateError) return preflightFailure(gateError);
 	if (!env.OPENAI_API_KEY) return fail(extractError('auth'));
 
-	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-	const method = ['text', 'ocr', 'hybrid'].includes(metrics?.method ?? '') ? metrics?.method : 'text';
+	const client = new OpenAI({ apiKey: env.OPENAI_API_KEY, ...OPENAI_REQUEST_OPTIONS });
 	const content: OpenAI.Responses.ResponseInputContent[] = [
 		{
 			type: 'input_text',
@@ -56,20 +82,23 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// Call OpenAI with structured output.
 	try {
-		const response = await client.responses.create({
-			model: MODEL,
-			input: [{ role: 'user', content }],
-			reasoning: { effort: 'medium' },
-			store: false,
-			text: {
-				format: {
-					type: 'json_schema',
-					name: 'resume',
-					strict: true,
-					schema: RESUME_SCHEMA as unknown as Record<string, unknown>,
+		const response = await client.responses.create(
+			{
+				model: MODEL,
+				input: [{ role: 'user', content }],
+				reasoning: { effort: 'medium' },
+				store: false,
+				text: {
+					format: {
+						type: 'json_schema',
+						name: 'resume',
+						strict: true,
+						schema: RESUME_SCHEMA as unknown as Record<string, unknown>,
+					},
 				},
 			},
-		});
+			{ signal: AbortSignal.timeout(OPENAI_REQUEST_OPTIONS.timeout) },
+		);
 
 		const raw = response.output_text;
 		if (!raw) return fail(extractError('parse_failed'));

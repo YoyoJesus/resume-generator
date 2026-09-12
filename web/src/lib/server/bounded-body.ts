@@ -1,12 +1,15 @@
 export class RequestBodyTooLargeError extends Error {}
 
 /** Reads a request body while enforcing its byte ceiling before buffering the full payload. */
-export async function readBoundedBody(request: Request, maxBytes: number): Promise<string> {
-	if (!request.body) return '';
+export async function readBoundedBytes(request: Request, maxBytes: number): Promise<Uint8Array<ArrayBuffer>> {
+	if (Number(request.headers.get('content-length')) > maxBytes) {
+		void request.body?.cancel().catch(() => undefined);
+		throw new RequestBodyTooLargeError(`Request body exceeds ${maxBytes} bytes.`);
+	}
+	if (!request.body) return new Uint8Array();
 	const reader = request.body.getReader();
-	const decoder = new TextDecoder();
+	const chunks: Uint8Array[] = [];
 	let size = 0;
-	let text = '';
 
 	try {
 		while (true) {
@@ -14,13 +17,23 @@ export async function readBoundedBody(request: Request, maxBytes: number): Promi
 			if (done) break;
 			size += value.byteLength;
 			if (size > maxBytes) {
-				await reader.cancel().catch(() => undefined);
+				void reader.cancel().catch(() => undefined);
 				throw new RequestBodyTooLargeError(`Request body exceeds ${maxBytes} bytes.`);
 			}
-			text += decoder.decode(value, { stream: true });
+			chunks.push(value);
 		}
-		return text + decoder.decode();
+		const bytes = new Uint8Array(size);
+		let offset = 0;
+		for (const chunk of chunks) {
+			bytes.set(chunk, offset);
+			offset += chunk.byteLength;
+		}
+		return bytes;
 	} finally {
 		reader.releaseLock();
 	}
+}
+
+export async function readBoundedBody(request: Request, maxBytes: number): Promise<string> {
+	return new TextDecoder().decode(await readBoundedBytes(request, maxBytes));
 }
