@@ -141,7 +141,12 @@
 		hasCustomTemplate={customTemplate !== null}
 	/>
 
-	<OnetDrawer bind:open={tailorOpen} bind:data onInserted={() => (showReviewBanner = true)} />
+	<OnetDrawer
+		bind:open={tailorOpen}
+		bind:data
+		pageCount={compiledPageCount}
+		onInserted={() => (showReviewBanner = true)}
+	/>
 
 	<main class="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 lg:flex-1 lg:min-h-0">
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-full lg:min-h-0">

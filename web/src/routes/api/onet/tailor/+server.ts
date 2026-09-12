@@ -60,7 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	// allowed.fields always carries the four font controls, so it cannot answer this on its own.
-	const { prompt, hasTargets, allowed } = buildTailorInput(body.resume, occupation);
+	const { prompt, hasTargets, allowed } = buildTailorInput(body.resume, occupation, body.pageCount);
 	if (!hasTargets) return json({ edits: [], reason: 'no_targets' });
 
 	try {
