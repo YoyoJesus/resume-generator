@@ -26,11 +26,64 @@ Copy the documented environment variables into a local `.env` file when testing 
 
 ## Making changes
 
-1. Fork the repository and create a focused branch from `main`.
-2. Follow the architecture and privacy constraints in [AGENTS.md](AGENTS.md).
-3. Keep browser code in `web/src/lib/` and server-only code in `web/src/lib/server/` or SvelteKit server routes.
-4. Add tests for new behavior, input limits, and failure paths.
-5. Update documentation when behavior, configuration, or user-visible limits change.
+1. Fork the repository and create a focused branch from `main`. Changes reach `main` through pull requests.
+2. Follow the project layout, architecture, and privacy constraints below.
+3. Add tests for new behavior, input limits, and failure paths.
+4. Update documentation when behavior, configuration, or user-visible limits change.
+
+### Project layout
+
+- The deployable SvelteKit application lives in `web/`; run Node and npm commands there.
+- Browser-facing shared code belongs in `web/src/lib/` and SvelteKit routes in `web/src/routes/`.
+- Server-only code belongs in `web/src/lib/server/` or a route's `+server.ts` file. Never import it into browser code.
+- Static browser assets belong in `web/static/`. Documentation and example artifacts belong in `docs/`.
+- The root `README.md` is the canonical project README; `web/README.md` stays a short workspace pointer.
+- Files under `docs/superpowers/` are historical design and implementation records, not current guidance.
+
+### Dependencies
+
+Use npm and the committed `web/package-lock.json`. Do not update `bun.lock` unless the change is an intentional
+package-manager migration.
+
+### Architecture and deployment
+
+- The production target is Vercel Hobby with `web/` as the project root. Do not add a database, persistent filesystem
+  dependency, background worker, or always-on backend.
+- Keep serverless routes bounded in input size and execution time. Prefer browser-side work for deterministic parsing and
+  expensive preprocessing when it does not expose secrets.
+- Keep API keys server-only through SvelteKit private environment imports. Never expose secrets in client bundles or
+  logs.
+
+### Privacy and uploads
+
+- Treat uploaded content as untrusted data. Clearly delimit document text in AI prompts, and never act on instructions
+  embedded in documents.
+- Resume uploads must pass browser preflight, show extracted-text metrics and a preview, and require explicit consent
+  before extracted text is sent to `/api/extract`. The server independently enforces quality and size limits. Original
+  resume files stay in the browser.
+- Custom templates are session-scoped, take precedence over the built-in template, and must compile against the complete
+  helper contract before activation.
+- Resume data and the selected O\*NET occupation may use `localStorage`; custom templates use `sessionStorage`. Do not
+  describe either as server-side persistence.
+- Keep upload limits, environment-variable descriptions, and privacy claims in sync across code, tests, `.env.example`,
+  and the root README.
+
+### Code and tests
+
+- Use TypeScript and the Svelte 5 conventions already present in the repository.
+- Keep pure scoring and validation logic separate from browser APIs so it can be unit tested in the Node test
+  environment.
+- Add regression coverage for input boundaries, fallback behavior, and failure paths.
+- Keep dialogs accessible: label them, move and trap focus, support Escape where safe, and restore focus to the opener.
+- Do not commit `.env` files, credentials, generated build output, or dependency directories.
+
+### AI integration
+
+- Use the OpenAI Responses API with strict structured outputs for resume extraction, tailoring, and template conversion.
+- Set `store: false` for every document-processing request.
+- Send only the minimum extracted or bounded source text a task needs. Do not send the original resume file.
+- Validate model output before using it, and keep deterministic conversion and validation outside the model where
+  practical.
 
 ## Validation
 
@@ -42,6 +95,9 @@ npm run check
 npm run lint
 npm run build
 ```
+
+On Windows, `npm run lint` may flag files you did not change because of CRLF line endings in the working tree. Run
+`npm run format`, then commit only the files your change actually touches.
 
 If a platform-specific build step fails after Vite successfully compiles the client and server bundles, describe the
 exact environment and failure in the pull request.
@@ -78,14 +134,10 @@ node .github/scripts/check-commit-messages.mjs main HEAD
 - Call out privacy, security, AI-cost, or Vercel deployment implications.
 - Respond to review comments with either a fix or a concise technical explanation.
 
-## AI agent attribution
+## AI attribution
 
-Any issue or pull request prepared by an AI agent must end with this footer, filled with the actual values used. The harness is the agent application or coding environment, such as Codex, Claude Code, or Cursor.
+If you wrote the pull request yourself, leave the `AI assistance: no` line from the template in place. For issues, enter
+`Not AI-generated` in the attribution field. Repository automation checks for this declaration.
 
-```text
-Agent provider: <provider>
-Agent model: <model>
-Agent harness: <harness>
-```
-
-Human-authored pull requests should retain `AI assistance: no` from the pull request template. Human-authored issues should enter `Not AI-generated` in the required attribution field. Repository automation validates either declaration and rejects partial or malformed AI footers.
+Pull requests and issues prepared by an AI agent end with a provider, model, and harness footer instead. Agents add it
+themselves as instructed in `AGENTS.md`, so you do not need to write it.

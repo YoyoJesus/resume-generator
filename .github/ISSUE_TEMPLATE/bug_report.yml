@@ -63,16 +63,11 @@ body:
           required: true
         - label: I removed credentials and personal resume data from this report.
           required: true
-        - label: If an AI agent prepared this issue, I will include its provider, model, and harness below.
-          required: true
   - type: textarea
     id: agent_attribution
     attributes:
-      label: Agent attribution
-      description: Enter the exact three-line footer for an AI submission. Otherwise enter "Not AI-generated".
-      placeholder: |
-        Agent provider: OpenAI
-        Agent model: gpt-5.6-sol
-        Agent harness: Codex
+      label: AI attribution
+      description: Leave this as is if you wrote the issue yourself.
+      value: Not AI-generated
     validations:
       required: true

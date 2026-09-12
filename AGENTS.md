@@ -38,11 +38,10 @@ Use this pull request body verbatim. Keep every heading, replace each HTML comme
 
 ## Checklist
 
-- [ ] My changes are focused and follow `AGENTS.md`.
+- [ ] My changes are focused and follow `CONTRIBUTING.md`.
 - [ ] I updated relevant documentation.
 - [ ] I used synthetic test data and did not commit secrets or personal resume information.
 - [ ] I reviewed the diff for unrelated generated or formatting changes.
-- [ ] If an AI agent prepared this PR, I added its provider, model, and harness footer below.
 
 AI assistance: yes
 
@@ -51,7 +50,9 @@ Agent model: MODEL_NAME
 Agent harness: HARNESS_NAME
 ```
 
-Replace `PROVIDER_NAME`, `MODEL_NAME`, and `HARNESS_NAME` with the values actually used, for example `OpenAI`, `GPT-6`, and `Codex`. Write plain values with no angle brackets; validation rejects `<` and `>`. The three footer lines must be the last lines of the body, in that order. A human-authored pull request keeps `AI assistance: no` instead and omits the footer.
+Replace `PROVIDER_NAME`, `MODEL_NAME`, and `HARNESS_NAME` with the values actually used, for example `OpenAI`, `GPT-6`, and `Codex`. Write plain values with no angle brackets; validation rejects `<` and `>`. The three footer lines must be the last lines of the body, in that order. The template's `AI assistance: no` line and its comment are for humans; replace them with the block above. The footer is your responsibility: the template has no checkbox for it, and humans are not expected to add it for you. For issues, replace the prefilled `Not AI-generated` attribution field with the same three-line footer.
+
+`CONTRIBUTING.md` holds the human-facing version of the guidelines below. When you change a guideline here, update it there too.
 
 Creating a pull request through the GitHub API, `gh pr create`, or an agent integration does not apply `.github/pull_request_template.md`. That is why the body above is reproduced here; supply it explicitly with `gh pr create --body-file`.
 

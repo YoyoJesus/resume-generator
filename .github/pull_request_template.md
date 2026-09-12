@@ -19,12 +19,11 @@
 
 ## Checklist
 
-- [ ] My changes are focused and follow `AGENTS.md`.
+- [ ] My changes are focused and follow `CONTRIBUTING.md`.
 - [ ] I updated relevant documentation.
 - [ ] I used synthetic test data and did not commit secrets or personal resume information.
 - [ ] I reviewed the diff for unrelated generated or formatting changes.
-- [ ] If an AI agent prepared this PR, I added its provider, model, and harness footer below.
+
+<!-- Leave the line below as is. -->
 
 AI assistance: no
-
-<!-- AI agents: change the declaration to "yes" and end the PR with Agent provider, Agent model, and Agent harness. -->
