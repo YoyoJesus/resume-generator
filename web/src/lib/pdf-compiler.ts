@@ -74,10 +74,6 @@ export async function compileToPreview(typstCode: string): Promise<CompiledPrevi
 	}
 }
 
-export async function compileToSvg(typstCode: string): Promise<string> {
-	return (await compileToPreview(typstCode)).svg;
-}
-
 export function downloadPdf(pdfData: Uint8Array, filename: string = 'resume.pdf'): void {
 	const blob = new Blob([new Uint8Array(pdfData)], { type: 'application/pdf' });
 	downloadBlob(blob, filename);

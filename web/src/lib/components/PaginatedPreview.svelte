@@ -7,10 +7,11 @@
 	function splitPages({ svg, pages }: CompiledPreview): string[] {
 		if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') return [];
 
-		const document = new DOMParser().parseFromString(svg, 'image/svg+xml');
-		if (document.querySelector('parsererror')) return [];
-
-		const root = document.documentElement;
+		// The renderer's inline script contains HTML entities such as &nbsp;, which
+		// are valid in the browser but not in a standalone XML document.
+		const document = new DOMParser().parseFromString(svg, 'text/html');
+		const root = document.querySelector('svg');
+		if (!root) return [];
 		const renderedPages = Array.from(root.children).filter((child) => child.classList.contains('typst-page'));
 		if (renderedPages.length !== pages.length) return [];
 
