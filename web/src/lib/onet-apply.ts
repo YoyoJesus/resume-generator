@@ -8,16 +8,21 @@ import { appendBullet, appendSkill, bulletTargets } from './onet-insert';
 // highlight. An edit whose target has since disappeared is skipped rather than
 // aborting the batch.
 export function applyTailorEdits(
-	data: ResumeData,
+	submitted: ResumeData,
+	current: ResumeData,
 	edits: TailorEdit[],
-): { data: ResumeData; paths: string[]; removed: number } {
-	let next = data;
+): { data: ResumeData; paths: string[]; removed: number; stale: boolean } {
+	if (JSON.stringify(submitted) !== JSON.stringify(current)) {
+		return { data: current, paths: [], removed: 0, stale: true };
+	}
+
+	let next = current;
 	const paths: string[] = [];
 	const bulletHighlights: { targetId: string; index: number }[] = [];
 	let removed = 0;
 	const bulletPositions = new Map<string, number[]>();
 
-	for (const entries of [data.workExperience, data.projects, data.education, data.leadership]) {
+	for (const entries of [current.workExperience, current.projects, current.education, current.leadership]) {
 		for (const entry of entries) {
 			bulletPositions.set(
 				entry.id,
@@ -169,5 +174,5 @@ export function applyTailorEdits(
 		paths.push(`${key}.${entryIndex}.bullets.${highlight.index - shift}`);
 	}
 
-	return { data: next, paths, removed };
+	return { data: next, paths, removed, stale: false };
 }

@@ -34,28 +34,28 @@ const skill = (targetId: string, text: string): TailorEdit => ({ kind: 'skill', 
 
 describe('applyTailorEdits', () => {
 	it('appends a bullet to the named experience entry', () => {
-		const { data, paths } = applyTailorEdits(seed(), [bullet('w1', 'Modified existing software.')]);
+		const { data, paths } = applyTailorEdits(seed(), seed(), [bullet('w1', 'Modified existing software.')]);
 
 		expect(data.workExperience[0].bullets).toEqual(['Built an API.', 'Modified existing software.']);
 		expect(paths).toEqual(['workExperience.0.bullets.1']);
 	});
 
 	it('routes a bullet to a project when the id is a project', () => {
-		const { data, paths } = applyTailorEdits(seed(), [bullet('p1', 'Tested performance.')]);
+		const { data, paths } = applyTailorEdits(seed(), seed(), [bullet('p1', 'Tested performance.')]);
 
 		expect(data.projects[0].bullets).toEqual(['Tested performance.']);
 		expect(paths).toEqual(['projects.0.bullets.0']);
 	});
 
 	it('appends a skill to the named category', () => {
-		const { data, paths } = applyTailorEdits(seed(), [skill('s1', 'Go')]);
+		const { data, paths } = applyTailorEdits(seed(), seed(), [skill('s1', 'Go')]);
 
 		expect(data.skills[0].skills).toBe('Python, Go');
 		expect(paths).toEqual(['skills.0.skills']);
 	});
 
 	it('applies several edits across different entries in one pass', () => {
-		const { data, paths } = applyTailorEdits(seed(), [
+		const { data, paths } = applyTailorEdits(seed(), seed(), [
 			bullet('w1', 'First added bullet.'),
 			bullet('w1', 'Second added bullet.'),
 			bullet('p1', 'Project bullet.'),
@@ -70,26 +70,26 @@ describe('applyTailorEdits', () => {
 	});
 
 	it('reports the right index for the second bullet added to one entry', () => {
-		const { paths } = applyTailorEdits(seed(), [bullet('w1', 'One.'), bullet('w1', 'Two.')]);
+		const { paths } = applyTailorEdits(seed(), seed(), [bullet('w1', 'One.'), bullet('w1', 'Two.')]);
 		expect(paths).toEqual(['workExperience.0.bullets.1', 'workExperience.0.bullets.2']);
 	});
 
 	it('skips an edit whose target no longer exists without dropping the rest', () => {
-		const { data, paths } = applyTailorEdits(seed(), [bullet('ghost', 'Orphan.'), bullet('w1', 'Kept.')]);
+		const { data, paths } = applyTailorEdits(seed(), seed(), [bullet('ghost', 'Orphan.'), bullet('w1', 'Kept.')]);
 
 		expect(data.workExperience[0].bullets).toEqual(['Built an API.', 'Kept.']);
 		expect(paths).toEqual(['workExperience.0.bullets.1']);
 	});
 
 	it('skips a duplicate the resume already contains', () => {
-		const { data, paths } = applyTailorEdits(seed(), [bullet('w1', 'Built an API.')]);
+		const { data, paths } = applyTailorEdits(seed(), seed(), [bullet('w1', 'Built an API.')]);
 
 		expect(data.workExperience[0].bullets).toEqual(['Built an API.']);
 		expect(paths).toEqual([]);
 	});
 
 	it('rewrites an existing bullet in place', () => {
-		const { data, paths } = applyTailorEdits(seed(), [
+		const { data, paths } = applyTailorEdits(seed(), seed(), [
 			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 0, text: 'Built and shipped a production API.' },
 		]);
 
@@ -98,7 +98,7 @@ describe('applyTailorEdits', () => {
 	});
 
 	it('removes a least-relevant bullet when shortening a resume', () => {
-		const { data, removed } = applyTailorEdits(seed(), [
+		const { data, removed } = applyTailorEdits(seed(), seed(), [
 			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: '' },
 		]);
 
@@ -109,7 +109,7 @@ describe('applyTailorEdits', () => {
 	it('deduplicates removals that resolve to the same original bullet', () => {
 		const before = seed();
 		before.workExperience[0].bullets = ['A', 'B'];
-		const { data, removed } = applyTailorEdits(before, [
+		const { data, removed } = applyTailorEdits(before, before, [
 			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: '' },
 			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: 'duplicate rationale' },
 		]);
@@ -133,7 +133,7 @@ describe('applyTailorEdits', () => {
 				bullets: ['Original'],
 			},
 		];
-		const { data, paths } = applyTailorEdits(before, [
+		const { data, paths } = applyTailorEdits(before, before, [
 			{ kind: 'rewrite_bullet', targetId: 'e1', bulletIndex: 0, text: 'Rewritten' },
 		]);
 
@@ -156,7 +156,7 @@ describe('applyTailorEdits', () => {
 				bullets: [],
 			},
 		];
-		const { data, paths } = applyTailorEdits(before, [bullet('e1', 'Completed relevant coursework.')]);
+		const { data, paths } = applyTailorEdits(before, before, [bullet('e1', 'Completed relevant coursework.')]);
 
 		expect(data.education[0].bullets).toEqual(['Completed relevant coursework.']);
 		expect(paths).toEqual(['education.0.bullets.0']);
@@ -165,7 +165,7 @@ describe('applyTailorEdits', () => {
 	it('resolves rewrites against the original snapshot when an earlier bullet is removed', () => {
 		const before = seed();
 		before.workExperience[0].bullets = ['A', 'B', 'C'];
-		const { data, paths } = applyTailorEdits(before, [
+		const { data, paths } = applyTailorEdits(before, before, [
 			{ kind: 'remove_bullet', targetId: 'w1', bulletIndex: 0, text: '' },
 			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 1, text: 'B2' },
 		]);
@@ -177,7 +177,7 @@ describe('applyTailorEdits', () => {
 	it('maps filtered prompt indices back to the original bullet array', () => {
 		const before = seed();
 		before.workExperience[0].bullets = ['A', '', 'C'];
-		const { data, paths } = applyTailorEdits(before, [
+		const { data, paths } = applyTailorEdits(before, before, [
 			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 1, text: 'C2' },
 		]);
 
@@ -186,7 +186,7 @@ describe('applyTailorEdits', () => {
 	});
 
 	it('applies a validated font size adjustment', () => {
-		const { data, paths } = applyTailorEdits(seed(), [
+		const { data, paths } = applyTailorEdits(seed(), seed(), [
 			{ kind: 'set_font', targetId: 'baseSize', bulletIndex: -1, text: '8.1' },
 		]);
 
@@ -196,9 +196,43 @@ describe('applyTailorEdits', () => {
 
 	it('leaves the resume untouched when there is nothing to apply', () => {
 		const before = seed();
-		const { data, paths } = applyTailorEdits(before, []);
+		const { data, paths } = applyTailorEdits(before, before, []);
 
 		expect(data).toEqual(before);
 		expect(paths).toEqual([]);
+	});
+
+	it('rejects the whole batch when the resume changed since the edits were requested', () => {
+		const submitted = seed();
+		const current = seed();
+		current.workExperience[0].bullets = ['B'];
+
+		const result = applyTailorEdits(submitted, current, [
+			{ kind: 'rewrite_bullet', targetId: 'w1', bulletIndex: 0, text: 'Rewrite meant for the deleted bullet.' },
+		]);
+
+		expect(result.stale).toBe(true);
+		expect(result.data).toBe(current);
+		expect(result.data.workExperience[0].bullets).toEqual(['B']);
+		expect(result.paths).toEqual([]);
+		expect(result.removed).toBe(0);
+	});
+
+	it('rejects the batch when an unrelated manual edit landed while tailoring was pending', () => {
+		const submitted = seed();
+		const current = seed();
+		current.skills[0].skills = 'Python, manually added';
+
+		const result = applyTailorEdits(submitted, current, [bullet('w1', 'Would otherwise be added.')]);
+
+		expect(result.stale).toBe(true);
+		expect(result.data.workExperience[0].bullets).toEqual(['Built an API.']);
+	});
+
+	it('applies normally when the resume is unchanged even if submitted and current are different objects', () => {
+		const result = applyTailorEdits(seed(), seed(), [bullet('w1', 'Added after an unrelated re-render.')]);
+
+		expect(result.stale).toBe(false);
+		expect(result.data.workExperience[0].bullets).toEqual(['Built an API.', 'Added after an unrelated re-render.']);
 	});
 });
